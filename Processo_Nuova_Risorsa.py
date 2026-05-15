@@ -18,6 +18,19 @@ def load_config_from_bytes(data: bytes):
     else:
         ris = pd.DataFrame()
 
+    # Normalizzazione colonne (robusta e NON cambia funzionalità)
+    # Gestisce eventuali varianti "Tipo"/"TIPO"
+    if not ris.empty:
+        cols = {c: c.strip() for c in ris.columns}
+        ris = ris.rename(columns=cols)
+
+        if "Tipo" in ris.columns and "TIPO" not in ris.columns:
+            ris = ris.rename(columns={"Tipo": "TIPO"})
+
+        for col in ["Section", "Key/App", "Label/Gruppi/Value", "TIPO"]:
+            if col in ris.columns:
+                ris[col] = ris[col].fillna("").astype(str).str.strip()
+
     ou_df = ris[ris["Section"] == "OU"][["Key/App", "Label/Gruppi/Value"]].rename(
         columns={"Key/App": "key", "Label/Gruppi/Value": "label"})
     ou_options = dict(zip(ou_df["key"], ou_df["label"]))
@@ -30,6 +43,18 @@ def load_config_from_bytes(data: bytes):
         columns={"Key/App": "key", "Label/Gruppi/Value": "value"})
     defaults = dict(zip(def_df["key"], def_df["value"]))
 
+    # ✅ NUOVO: Estrai TUTTE le Defaults con TIPO = PEL (ordine foglio)
+    pel_items = []
+    if not ris.empty and "TIPO" in ris.columns:
+        pel_df = ris[(ris["Section"] == "Defaults") & (ris["TIPO"].str.upper() == "PEL")][
+            ["Key/App", "Label/Gruppi/Value"]
+        ]
+        for _, r in pel_df.iterrows():
+            k = str(r["Key/App"]).strip()
+            v = str(r["Label/Gruppi/Value"]).strip()
+            if v:
+                pel_items.append((k, v))
+
     # Estrai organigramma se presente
     organigramma = {}
     if "organigramma" in cfg:
@@ -37,7 +62,8 @@ def load_config_from_bytes(data: bytes):
         org.columns = ["label", "value"]
         organigramma = dict(zip(org["label"], org["value"]))
 
-    return ou_options, gruppi, defaults, organigramma
+    return ou_options, gruppi, defaults, organigramma, pel_items
+
 
 # ------------------------------------------------------------
 # App 1.1: Nuova Risorsa Interna
@@ -53,7 +79,7 @@ if not config_file:
     st.warning("Per favore carica il file di configurazione per continuare.")
     st.stop()
 
-ou_options, gruppi, defaults, organigramma = load_config_from_bytes(config_file.read())
+ou_options, gruppi, defaults, organigramma, pel_items = load_config_from_bytes(config_file.read())
 
 # --- Estrazione valori defaults e gruppi O365 (gestione robusta di ; e più chiavi grp_o365_) ---
 dl_standard = defaults.get("dl_standard", "").split(";") if defaults.get("dl_standard") else []
@@ -71,12 +97,13 @@ for k, v in defaults.items():
                 token = "O" + token
             o365_groups.append(token)
 
-# --- gruppi Azure e canale (letti dai Defaults)
+# --- gruppi Azure e canale (letti dai Defaults) -> li lasciamo come variabili (non cambia funzionalità)
 grp_foorban = defaults.get("grp_foorban", "")
 grp_salesforce = defaults.get("grp_salesforce", "")
-grp_salesforce_welfare = defaults.get("grp_salesforce_welfare", "")  # <-- NEW
+grp_salesforce_welfare = defaults.get("grp_salesforce_welfare", "")
 pillole = defaults.get("pillole", "")
 intranet_psn = defaults.get("intranet_psn", "")
+netskope = defaults.get("netskope", "")
 
 # Percorso di archivio (raw string per evitare escape warnings)
 ARCHIVE_PATH = r"\\srv_dati.consip.tesoro.it\AreaCondivisa\DEPSI\IC\AD_Modifiche"
@@ -169,6 +196,42 @@ sm_lines = st.text_area("SM (una per riga)", "").splitlines() if profilazione el
 
 dl_list = dl_standard if selected_key == "utenti_standard" else dl_vip if selected_key == "utenti_vip" else []
 
+# ------------------------------------------------------------
+# Helper: costruzione dinamica lista PEL per Template Posta (senza cambiare le regole attuali)
+# ------------------------------------------------------------
+def build_dynamic_pel_for_template(pel_items, selected_key):
+    """
+    Regole:
+    - dl_standard/dl_vip NON qui (sono DL)
+    - pillole NON qui (è canale)
+    - grp_salesforce_welfare SOLO per utenti_standard
+    - tutte le altre PEL vanno in 'gruppo Azure'
+    Mantiene l'ordine del foglio.
+    """
+    azure_groups = []
+    pillole_value = ""
+
+    for k, v in pel_items:
+        key = str(k).strip()
+        val = str(v).strip()
+        if not val:
+            continue
+
+        if key in ("dl_standard", "dl_vip"):
+            continue
+
+        if key == "pillole":
+            pillole_value = val
+            continue
+
+        if key == "grp_salesforce_welfare" and selected_key != "utenti_standard":
+            continue
+
+        azure_groups.append(val)
+
+    return azure_groups, pillole_value
+
+
 # Preview Messaggio
 if st.button("Template per Posta Elettronica"):
     sAM = genera_samaccountname(nome, cognome, secondo_nome, secondo_cognome, False)
@@ -195,20 +258,15 @@ if st.button("Template per Posta Elettronica"):
         for sm in sm_lines:
             st.markdown(f"- {sm}")
 
-    # --- Sezione Aggiunta gruppi Azure (visibile anche il Welfare solo per Utenti Standard)
-    st.markdown("**Aggiungere utenza al gruppo Azure:**")
-    if grp_foorban:
-        st.markdown(f"- {grp_foorban}")
-    if grp_salesforce:
-        st.markdown(f"- {grp_salesforce}")
-    if intranet_psn:
-        st.markdown(f"- {intranet_psn}")
-    # SOLO per Utenti Standard
-    if selected_key == "utenti_standard" and grp_salesforce_welfare:
-        st.markdown(f"- {grp_salesforce_welfare}")
+    # --- Sezione Aggiunta gruppi Azure DINAMICA da tutte le PEL del config
+    azure_groups, pillole_dyn = build_dynamic_pel_for_template(pel_items, selected_key)
 
-    if pillole:
-        st.markdown(f"- canale {pillole}")
+    st.markdown("**Aggiungere utenza al gruppo Azure:**")
+    for g in azure_groups:
+        st.markdown(f"- {g}")
+
+    if pillole_dyn:
+        st.markdown(f"- canale {pillole_dyn}")
 
     st.markdown("Grazie  \nSaluti")
 
@@ -373,21 +431,16 @@ if st.button("Genera CSV"):
         for sm in sm_lines:
             template_preview_lines.append(f"- {sm}\n")
 
-    # --- Sezione Azure groups con Welfare solo per Utenti Standard
-    azure_group_lines = []
-    if grp_foorban:
-        azure_group_lines.append(f"- {grp_foorban}")
-    if grp_salesforce:
-        azure_group_lines.append(f"- {grp_salesforce}")
-    if selected_key == "utenti_standard" and grp_salesforce_welfare:
-        azure_group_lines.append(f"- {grp_salesforce_welfare}")
+    # --- Sezione Azure groups DINAMICA (stessa logica del template a video)
+    azure_groups, pillole_dyn = build_dynamic_pel_for_template(pel_items, selected_key)
 
-    if azure_group_lines:
+    if azure_groups:
         template_preview_lines.append("\nAggiungere utenza al gruppo Azure:\n")
-        template_preview_lines.extend(line + "\n" for line in azure_group_lines)
+        for g in azure_groups:
+            template_preview_lines.append(f"- {g}\n")
 
-    if pillole:
-        template_preview_lines.append(f"- canale {pillole}\n")
+    if pillole_dyn:
+        template_preview_lines.append(f"- canale {pillole_dyn}\n")
 
     # unisco tutto in una stringa markdown
     template_preview_md = "\n".join(template_preview_lines)
