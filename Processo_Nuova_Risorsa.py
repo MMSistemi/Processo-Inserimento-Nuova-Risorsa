@@ -445,9 +445,6 @@ def auto_quote(
     """
     Racchiude tra doppi apici ogni valore che contiene
     almeno uno spazio.
-
-    Esempio:
-    Spagnuolo Luca -> "Spagnuolo Luca"
     """
 
     output = []
@@ -714,33 +711,21 @@ data_operativa = st.text_input(
 
 
 # ------------------------------------------------------------
-# Dati aggiuntivi per il flusso operativo completo
+# Dati aggiuntivi per il flusso operativo
 # ------------------------------------------------------------
 mouse_id = st.text_input(
     "Mouse ID",
-    "",
-    help=(
-        "Campo facoltativo. Se lasciato vuoto, "
-        "nel testo verrà riportato #id."
-    )
+    ""
 ).strip()
 
 mouse_sn = st.text_input(
     "Mouse SN",
-    "",
-    help=(
-        "Campo facoltativo. Se lasciato vuoto, "
-        "nel testo verrà riportato #sn."
-    )
+    ""
 ).strip()
 
 hub_id = st.text_input(
     "HUB Sandberg ID",
-    "",
-    help=(
-        "Campo facoltativo. Se lasciato vuoto, "
-        "nel testo verrà riportato #id."
-    )
+    ""
 ).strip()
 
 firma_digitale = st.checkbox(
@@ -770,15 +755,16 @@ else:
 # ------------------------------------------------------------
 if selected_key == "utenti_standard":
     dl_list = dl_standard
+
 elif selected_key == "utenti_vip":
     dl_list = dl_vip
+
 else:
     dl_list = []
 
 
 # ------------------------------------------------------------
-# Generazione file e bundle ZIP
-# Rimane unicamente il pulsante Genera CSV
+# Generazione flusso completo
 # ------------------------------------------------------------
 if st.button("Genera CSV"):
 
@@ -822,7 +808,6 @@ if st.button("Genera CSV"):
     else:
         mobile = ""
 
-    # Nome leggibile per i file 1-4
     persona_nome_file = " ".join(
         part
         for part in [
@@ -834,7 +819,6 @@ if st.button("Genera CSV"):
         if part
     )
 
-    # Nome con underscore per file computer e ZIP
     persona_nome_underscore = "_".join(
         part
         for part in [
@@ -846,9 +830,12 @@ if st.button("Genera CSV"):
         if part
     )
 
+    # ========================================================
+    # GENERAZIONE FILE PUNTO 02
+    # ========================================================
+
     # --------------------------------------------------------
     # 1 - File utenza
-    # Stessa struttura del precedente _utente.csv
     # --------------------------------------------------------
     row_utente = [
         sam,
@@ -883,7 +870,6 @@ if st.button("Genera CSV"):
 
     # --------------------------------------------------------
     # 2 - File casella
-    # Formato testuale esatto con separatore ---
     # --------------------------------------------------------
     casella_lines = [
         "Tipo Utenza --- Remota",
@@ -904,7 +890,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # 3 - File profilazione gruppi AD
+    # 3 - Profilazione gruppi AD
     # --------------------------------------------------------
     inserimento_gruppo_value = (
         gruppi.get(
@@ -953,7 +939,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # 4 - File profilazione gruppi Entra ID
+    # 4 - Profilazione gruppi Entra ID
     # --------------------------------------------------------
     gruppi_entraid = build_entraid_groups(
         pel_items,
@@ -978,7 +964,6 @@ if st.button("Genera CSV"):
 
     # --------------------------------------------------------
     # 5 - File computer
-    # Stessa struttura del precedente _computer.csv
     # --------------------------------------------------------
     row_computer = [
         description or "",
@@ -999,7 +984,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Nomi dei file
+    # Nomi file
     # --------------------------------------------------------
     filename_utente = (
         f"1_{persona_nome_file}_utenza.csv"
@@ -1025,7 +1010,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # 02 - Provisioning utente
+    # Testo punto 02
     # --------------------------------------------------------
     subject_provisioning = (
         "02 - Provisioning Utente "
@@ -1049,7 +1034,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # 08 - Liste di distribuzione
+    # Punto 08 - Liste distribuzione
     # --------------------------------------------------------
     subject_dl = (
         "08 - Lista di distribuzione standard -> GIIT"
@@ -1073,7 +1058,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Dati utilizzati nella guida del flusso
+    # Dati asset
     # --------------------------------------------------------
     pc_asset = (
         description
@@ -1099,7 +1084,9 @@ if st.button("Genera CSV"):
         f"{sam}@consip.it"
     )
 
-    # Nome + cognome + un carattere per il punto
+    # --------------------------------------------------------
+    # Calcolo SIC
+    # --------------------------------------------------------
     lunghezza_nome_cognome_sic = (
         len(normalize_name(nome))
         + len(normalize_name(cognome))
@@ -1111,8 +1098,17 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # 01 - Assegnazione Asset
+    # Creazione bundle ZIP
     # --------------------------------------------------------
+    zip_buffer = io.BytesIO()
+
+    # La guida testuale per lo ZIP viene costruita
+    # prima della visualizzazione.
+    guida_flusso_lines = []
+
+    # ========================================================
+    # 01 - ASSEGNAZIONE ASSET
+    # ========================================================
     subject_assegnazione_asset = (
         f"01 - Assegnazione Asset - {cn} -> GSI"
     )
@@ -1125,9 +1121,26 @@ if st.button("Genera CSV"):
         f"- HUB Sandberg ID {hub_id_output}\n"
     )
 
-    # --------------------------------------------------------
-    # 03 - Provisioning PC
-    # --------------------------------------------------------
+    guida_flusso_lines.extend(
+        [
+            subject_assegnazione_asset,
+            message_assegnazione_asset
+        ]
+    )
+
+    # ========================================================
+    # 02 - PROVISIONING UTENTE
+    # ========================================================
+    guida_flusso_lines.extend(
+        [
+            subject_provisioning,
+            message_provisioning
+        ]
+    )
+
+    # ========================================================
+    # 03 - PROVISIONING PC
+    # ========================================================
     subject_provisioning_pc = (
         f"03 - Provisioning PC - {cn} -> GHDW"
     )
@@ -1144,9 +1157,16 @@ if st.button("Genera CSV"):
         f"la risorsa prende servizio {data_operativa}\n"
     )
 
-    # --------------------------------------------------------
-    # 04 - Caricamento foto
-    # --------------------------------------------------------
+    guida_flusso_lines.extend(
+        [
+            subject_provisioning_pc,
+            message_provisioning_pc
+        ]
+    )
+
+    # ========================================================
+    # 04 - CARICAMENTO FOTO
+    # ========================================================
     subject_caricamento_foto = (
         f"04 - Caricamento Foto - {cn} -> GA"
     )
@@ -1157,9 +1177,16 @@ if st.button("Genera CSV"):
         f"in allegato per {cn}.\n"
     )
 
-    # --------------------------------------------------------
-    # 05 - Firma digitale
-    # --------------------------------------------------------
+    guida_flusso_lines.extend(
+        [
+            subject_caricamento_foto,
+            message_caricamento_foto
+        ]
+    )
+
+    # ========================================================
+    # 05 - FIRMA DIGITALE
+    # ========================================================
     subject_firma_digitale = (
         f"05 - Firma digitale - {cn} -> MM"
     )
@@ -1168,65 +1195,6 @@ if st.button("Genera CSV"):
         f"Assegnare Firma Digitale a {cn}.\n"
     )
 
-    # --------------------------------------------------------
-    # 06 - Verifica ed eventuale modifica SIC
-    # --------------------------------------------------------
-    subject_verifica_sic = (
-        "06 - Verifica ed Eventuale Modifica SIC - "
-        f"{cn} -> GA"
-    )
-
-    message_verifica_sic = (
-        "Ciao, si richiede verifica che per utente "
-        f"{cn} sia indicato sul SIC con la seguente "
-        f'email "{mail_utente}".\n'
-    )
-
-    # --------------------------------------------------------
-    # 07 - Accesso intranet PSN
-    # --------------------------------------------------------
-    subject_accesso_psn = (
-        "07 - Accesso intranet PSN per dipendente "
-        "-> GITT -> GA"
-    )
-
-    message_accesso_psn = (
-        "Attività momentaneamente esclusa dal flusso "
-        "perché attualmente gestita via email.\n"
-    )
-
-    # --------------------------------------------------------
-    # 09 - Firma Asset
-    # --------------------------------------------------------
-    subject_firma_asset = (
-        f"09 - Firma Asset - {cn} -> GHDW"
-    )
-
-    message_firma_asset = (
-        "Ciao,\n"
-        f"si richiede il giorno {data_operativa} "
-        "di far firmare gli asset ritirati dal 599 "
-        f"per la consegna a {cn}.\n"
-    )
-
-    # --------------------------------------------------------
-    # Costruzione della guida completa
-    # --------------------------------------------------------
-    guida_flusso_lines = [
-        subject_assegnazione_asset,
-        message_assegnazione_asset,
-
-        subject_provisioning,
-        message_provisioning,
-
-        subject_provisioning_pc,
-        message_provisioning_pc,
-
-        subject_caricamento_foto,
-        message_caricamento_foto
-    ]
-
-    # Il punto 05 viene aggiunto solo se selezionato
     if firma_digitale:
         guida_flusso_lines.extend(
             [
@@ -1234,246 +1202,53 @@ if st.button("Genera CSV"):
                 message_firma_digitale
             ]
         )
-
-    # Il punto 06 viene aggiunto solo se il limite
-    # nome + cognome + 1 supera 20 caratteri
-    if verifica_sic_necessaria:
+    else:
         guida_flusso_lines.extend(
             [
-                subject_verifica_sic,
-                message_verifica_sic
+                subject_firma_digitale,
+                (
+                    "Firma digitale non prevista "
+                    "per questa risorsa.\n"
+                )
             ]
         )
 
-    # Punto 07 momentaneamente escluso,
-    # ma mostrato come nota operativa
+    # ========================================================
+    # 06 - VERIFICA SIC
+    # VIENE SEMPRE VISUALIZZATO
+    # ========================================================
+    subject_verifica_sic = (
+        "06 - Verifica ed Eventuale Modifica SIC - "
+        f"{cn} -> GA"
+    )
+
+    if verifica_sic_necessaria:
+        message_verifica_sic = (
+            "Ciao, si richiede verifica che per utente "
+            f"{cn} sia indicato sul SIC con la seguente "
+            f'email "{mail_utente}".\n'
+        )
+    else:
+        message_verifica_sic = (
+            "Verifica SIC non necessaria.\n"
+            f"Nome + Cognome + 1 = "
+            f"{lunghezza_nome_cognome_sic} caratteri, "
+            "quindi non supera il limite di 20."
+        )
+
     guida_flusso_lines.extend(
         [
-            subject_accesso_psn,
-            message_accesso_psn,
-
-            subject_dl,
-            message_dl,
-
-            subject_firma_asset,
-            message_firma_asset
+            subject_verifica_sic,
+            message_verifica_sic
         ]
     )
 
-    guida_flusso = "\n".join(
-        guida_flusso_lines
+    # ========================================================
+    # 07 - ACCESSO INTRANET PSN
+    # ========================================================
+    subject_accesso_psn = (
+        "07 - Accesso intranet PSN per dipendente "
+        "-> GITT -> GA"
     )
 
-    # --------------------------------------------------------
-    # Visualizzazione guida pratica completa
-    # --------------------------------------------------------
-    st.subheader(
-        "Guida pratica flusso operativo 01-09"
-    )
-
-    st.text(
-        guida_flusso
-    )
-
-    # --------------------------------------------------------
-    # Informazioni sui punti condizionali
-    # --------------------------------------------------------
-    if not firma_digitale:
-        st.info(
-            "Punto 05 non visualizzato: "
-            "la firma digitale non è stata selezionata."
-        )
-
-    if not verifica_sic_necessaria:
-        st.info(
-            "Punto 06 non visualizzato: "
-            f"nome + cognome + 1 corrisponde a "
-            f"{lunghezza_nome_cognome_sic} caratteri "
-            "e non supera il limite di 20."
-        )
-
-    # --------------------------------------------------------
-    # Visualizzazione messaggi già esistenti
-    # --------------------------------------------------------
-    st.subheader(
-        subject_provisioning
-    )
-
-    st.text(
-        message_provisioning
-    )
-
-    st.subheader(
-        subject_dl
-    )
-
-    st.text(
-        message_dl
-    )
-
-    # --------------------------------------------------------
-    # Anteprima file 1
-    # --------------------------------------------------------
-    st.subheader(
-        "Anteprima 1 - Utenza"
-    )
-
-    st.dataframe(
-        pd.DataFrame(
-            [row_utente],
-            columns=HEADER_UTENTE
-        ),
-        use_container_width=True
-    )
-
-    # --------------------------------------------------------
-    # Anteprima file 2
-    # --------------------------------------------------------
-    st.subheader(
-        "Anteprima 2 - Casella"
-    )
-
-    st.text(
-        csv_casella
-    )
-
-    # --------------------------------------------------------
-    # Anteprima file 3
-    # --------------------------------------------------------
-    st.subheader(
-        "Anteprima 3 - Gruppi AD"
-    )
-
-    st.dataframe(
-        pd.DataFrame(
-            [row_gruppi_ad],
-            columns=HEADER_UTENTE
-        ),
-        use_container_width=True
-    )
-
-    # --------------------------------------------------------
-    # Anteprima file 4
-    # --------------------------------------------------------
-    st.subheader(
-        "Anteprima 4 - Gruppi Entra ID"
-    )
-
-    st.text(
-        csv_entraid
-    )
-
-    # --------------------------------------------------------
-    # Anteprima file 5
-    # --------------------------------------------------------
-    st.subheader(
-        "Anteprima 5 - Computer"
-    )
-
-    st.dataframe(
-        pd.DataFrame(
-            [row_computer],
-            columns=HEADER_COMPUTER
-        ),
-        use_container_width=True
-    )
-
-    # --------------------------------------------------------
-    # Download singoli file
-    # --------------------------------------------------------
-    st.download_button(
-        "Scarica 1 - Utenza",
-        data=csv_utente,
-        file_name=filename_utente,
-        mime="text/csv"
-    )
-
-    st.download_button(
-        "Scarica 2 - Casella",
-        data=csv_casella,
-        file_name=filename_casella,
-        mime="text/csv"
-    )
-
-    st.download_button(
-        "Scarica 3 - Gruppi AD",
-        data=csv_gruppi_ad,
-        file_name=filename_gruppi_ad,
-        mime="text/csv"
-    )
-
-    st.download_button(
-        "Scarica 4 - Gruppi Entra ID",
-        data=csv_entraid,
-        file_name=filename_entraid,
-        mime="text/csv"
-    )
-
-    st.download_button(
-        "Scarica 5 - Computer",
-        data=csv_computer,
-        file_name=filename_computer,
-        mime="text/csv"
-    )
-
-    # --------------------------------------------------------
-    # Creazione bundle ZIP
-    # --------------------------------------------------------
-    zip_buffer = io.BytesIO()
-
-    with zipfile.ZipFile(
-        zip_buffer,
-        "w",
-        zipfile.ZIP_DEFLATED
-    ) as zip_file:
-
-        zip_file.writestr(
-            filename_utente,
-            csv_utente
-        )
-
-        zip_file.writestr(
-            filename_casella,
-            csv_casella
-        )
-
-        zip_file.writestr(
-            filename_gruppi_ad,
-            csv_gruppi_ad
-        )
-
-        zip_file.writestr(
-            filename_entraid,
-            csv_entraid
-        )
-
-        zip_file.writestr(
-            filename_computer,
-            csv_computer
-        )
-
-        zip_file.writestr(
-            (
-                f"Guida_Flusso_"
-                f"{persona_nome_underscore}.txt"
-            ),
-            guida_flusso
-        )
-
-    zip_buffer.seek(0)
-
-    bundle_name = (
-        f"Provisioning_"
-        f"{persona_nome_underscore}.zip"
-    )
-
-    st.download_button(
-        "Scarica bundle completo ZIP",
-        data=zip_buffer.getvalue(),
-        file_name=bundle_name,
-        mime="application/zip"
-    )
-
-    st.success(
-        f"Bundle generato correttamente per '{sam}'."
-    )
+    message_accesso_psn
