@@ -24,11 +24,16 @@ def load_config_from_bytes(data: bytes):
     # Normalizzazione colonne
     if not ris.empty:
         ris = ris.rename(
-            columns={column: str(column).strip() for column in ris.columns}
+            columns={
+                column: str(column).strip()
+                for column in ris.columns
+            }
         )
 
         if "Tipo" in ris.columns and "TIPO" not in ris.columns:
-            ris = ris.rename(columns={"Tipo": "TIPO"})
+            ris = ris.rename(
+                columns={"Tipo": "TIPO"}
+            )
 
         for column in [
             "Section",
@@ -51,6 +56,7 @@ def load_config_from_bytes(data: bytes):
     }
 
     if not ris.empty and required_columns.issubset(ris.columns):
+
         # OU
         ou_df = ris[
             ris["Section"] == "OU"
@@ -131,10 +137,14 @@ def load_config_from_bytes(data: bytes):
 
         for _, row in pel_df.iterrows():
             key = str(row["Key/App"]).strip()
-            value = str(row["Label/Gruppi/Value"]).strip()
+            value = str(
+                row["Label/Gruppi/Value"]
+            ).strip()
 
             if value:
-                pel_items.append((key, value))
+                pel_items.append(
+                    (key, value)
+                )
 
     # Estrazione organigramma
     organigramma = {}
@@ -146,7 +156,10 @@ def load_config_from_bytes(data: bytes):
             .dropna(how="all")
         )
 
-        organigramma_df.columns = ["label", "value"]
+        organigramma_df.columns = [
+            "label",
+            "value"
+        ]
 
         organigramma = dict(
             zip(
@@ -171,7 +184,9 @@ st.set_page_config(
     page_title="1.1 Nuova Risorsa Interna"
 )
 
-st.title("1.1 Nuova Risorsa Interna")
+st.title(
+    "1.1 Nuova Risorsa Interna"
+)
 
 
 # ------------------------------------------------------------
@@ -200,7 +215,9 @@ if not config_file:
     defaults,
     organigramma,
     pel_items
-) = load_config_from_bytes(config_file.read())
+) = load_config_from_bytes(
+    config_file.read()
+)
 
 
 # ------------------------------------------------------------
@@ -216,11 +233,17 @@ def split_values(value):
 
 # Liste di distribuzione
 dl_standard = split_values(
-    defaults.get("dl_standard", "")
+    defaults.get(
+        "dl_standard",
+        ""
+    )
 )
 
 dl_vip = split_values(
-    defaults.get("dl_vip", "")
+    defaults.get(
+        "dl_vip",
+        ""
+    )
 )
 
 
@@ -232,6 +255,7 @@ o365_groups = []
 for key, value in defaults.items():
     if str(key).startswith("grp_o365_") and value:
         for group in split_values(value):
+
             # Correzione automatica nel caso manchi la O iniziale
             if group.startswith("365 "):
                 group = "O" + group
@@ -258,7 +282,10 @@ def normalize_name(value: str) -> str:
 
     ascii_value = (
         normalized
-        .encode("ASCII", "ignore")
+        .encode(
+            "ASCII",
+            "ignore"
+        )
         .decode()
     )
 
@@ -278,9 +305,15 @@ def genera_samaccountname(
     esterno=False
 ):
     nome_normalizzato = normalize_name(nome)
-    secondo_nome_normalizzato = normalize_name(secondo_nome)
-    cognome_normalizzato = normalize_name(cognome)
-    secondo_cognome_normalizzato = normalize_name(secondo_cognome)
+    secondo_nome_normalizzato = normalize_name(
+        secondo_nome
+    )
+    cognome_normalizzato = normalize_name(
+        cognome
+    )
+    secondo_cognome_normalizzato = normalize_name(
+        secondo_cognome
+    )
 
     suffix = ".ext" if esterno else ""
     limit = 16 if esterno else 20
@@ -355,7 +388,10 @@ def unique_in_order(values):
 # ------------------------------------------------------------
 # Costruzione gruppi Entra ID
 # ------------------------------------------------------------
-def build_entraid_groups(pel_items, selected_key):
+def build_entraid_groups(
+    pel_items,
+    selected_key
+):
     """
     Regole:
     - dl_standard e dl_vip non sono gruppi Entra ID;
@@ -393,7 +429,9 @@ def build_entraid_groups(pel_items, selected_key):
             split_values(value)
         )
 
-    return unique_in_order(entra_groups)
+    return unique_in_order(
+        entra_groups
+    )
 
 
 # ------------------------------------------------------------
@@ -427,7 +465,10 @@ def auto_quote(
     return output
 
 
-def prepara_csv_standard(row, header):
+def prepara_csv_standard(
+    row,
+    header
+):
     """
     Mantiene la costruzione precedente dei CSV:
     ogni campo contenente almeno uno spazio viene
@@ -508,7 +549,10 @@ st.subheader(
 
 employee_id = st.text_input(
     "Matricola",
-    defaults.get("employee_id_default", "")
+    defaults.get(
+        "employee_id_default",
+        ""
+    )
 ).strip()
 
 cognome = (
@@ -548,7 +592,9 @@ if organigramma:
     department_label = st.selectbox(
         "Sigla Divisione-Area",
         ["-- Seleziona --"]
-        + list(organigramma.keys())
+        + list(
+            organigramma.keys()
+        )
     )
 
     if department_label != "-- Seleziona --":
@@ -597,7 +643,9 @@ else:
     numero_fisso = ""
 
 if resident_flag and numero_fisso:
-    telephone_number = f"+39 {numero_fisso}"
+    telephone_number = (
+        f"+39 {numero_fisso}"
+    )
 else:
     telephone_number = defaults.get(
         "telephone_interna",
@@ -616,13 +664,17 @@ ou_values = (
 
 default_ou = defaults.get(
     "ou_default",
-    ou_values[0] if ou_values else ""
+    ou_values[0]
+    if ou_values
+    else ""
 )
 
 index_default = 0
 
 if default_ou in ou_values:
-    index_default = ou_values.index(default_ou)
+    index_default = ou_values.index(
+        default_ou
+    )
 
 if ou_values:
     label_ou = st.selectbox(
@@ -641,7 +693,9 @@ if ou_values:
         ou_options.keys()
     )[ou_values.index(label_ou)]
 
-    ou_value = ou_options[selected_key]
+    ou_value = ou_options[
+        selected_key
+    ]
 else:
     selected_key = ""
     ou_value = ""
@@ -657,6 +711,41 @@ data_operativa = st.text_input(
     "Data operatività (gg/mm/aaaa)",
     ""
 ).strip()
+
+
+# ------------------------------------------------------------
+# Dati aggiuntivi per il flusso operativo completo
+# ------------------------------------------------------------
+mouse_id = st.text_input(
+    "Mouse ID",
+    "",
+    help=(
+        "Campo facoltativo. Se lasciato vuoto, "
+        "nel testo verrà riportato #id."
+    )
+).strip()
+
+mouse_sn = st.text_input(
+    "Mouse SN",
+    "",
+    help=(
+        "Campo facoltativo. Se lasciato vuoto, "
+        "nel testo verrà riportato #sn."
+    )
+).strip()
+
+hub_id = st.text_input(
+    "HUB Sandberg ID",
+    "",
+    help=(
+        "Campo facoltativo. Se lasciato vuoto, "
+        "nel testo verrà riportato #id."
+    )
+).strip()
+
+firma_digitale = st.checkbox(
+    "Firma digitale?"
+)
 
 
 profilazione = st.checkbox(
@@ -692,6 +781,7 @@ else:
 # Rimane unicamente il pulsante Genera CSV
 # ------------------------------------------------------------
 if st.button("Genera CSV"):
+
     if not cognome or not nome:
         st.error(
             "Inserire almeno Cognome e Nome "
@@ -726,7 +816,9 @@ if st.button("Genera CSV"):
     )
 
     if numero_telefono:
-        mobile = f"+39 {numero_telefono}"
+        mobile = (
+            f"+39 {numero_telefono}"
+        )
     else:
         mobile = ""
 
@@ -815,7 +907,10 @@ if st.button("Genera CSV"):
     # 3 - File profilazione gruppi AD
     # --------------------------------------------------------
     inserimento_gruppo_value = (
-        gruppi.get("interna", "")
+        gruppi.get(
+            "interna",
+            ""
+        )
         or ""
     )
 
@@ -827,7 +922,9 @@ if st.button("Genera CSV"):
         if group.startswith("365 "):
             group = "O" + group
 
-        gruppi_interna.append(group)
+        gruppi_interna.append(
+            group
+        )
 
     gruppi_ad = unique_in_order(
         o365_groups
@@ -928,13 +1025,12 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Primo messaggio: provisioning utente
-    # Il file computer non viene citato nel messaggio
+    # 02 - Provisioning utente
     # --------------------------------------------------------
     subject_provisioning = (
         "02 - Provisioning Utente "
         "(utenza/Casella/Profilazione) - "
-        f"{cognome} {nome}"
+        f"{cn} -> GIIT"
     )
 
     message_provisioning = (
@@ -953,7 +1049,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Secondo messaggio: liste di distribuzione
+    # 08 - Liste di distribuzione
     # --------------------------------------------------------
     subject_dl = (
         "08 - Lista di distribuzione standard -> GIIT"
@@ -967,7 +1063,9 @@ if st.button("Genera CSV"):
         )
     ]
 
-    dl_lines.extend(dl_list)
+    dl_lines.extend(
+        dl_list
+    )
 
     message_dl = (
         "\n".join(dl_lines)
@@ -975,13 +1073,243 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Visualizzazione messaggi
+    # Dati utilizzati nella guida del flusso
     # --------------------------------------------------------
-    st.subheader(subject_provisioning)
-    st.text(message_provisioning)
+    pc_asset = (
+        description
+        or "<PC>"
+    )
 
-    st.subheader(subject_dl)
-    st.text(message_dl)
+    mouse_id_output = (
+        mouse_id
+        or "#id"
+    )
+
+    mouse_sn_output = (
+        mouse_sn
+        or "#sn"
+    )
+
+    hub_id_output = (
+        hub_id
+        or "#id"
+    )
+
+    mail_utente = (
+        f"{sam}@consip.it"
+    )
+
+    # Nome + cognome + un carattere per il punto
+    lunghezza_nome_cognome_sic = (
+        len(normalize_name(nome))
+        + len(normalize_name(cognome))
+        + 1
+    )
+
+    verifica_sic_necessaria = (
+        lunghezza_nome_cognome_sic > 20
+    )
+
+    # --------------------------------------------------------
+    # 01 - Assegnazione Asset
+    # --------------------------------------------------------
+    subject_assegnazione_asset = (
+        f"01 - Assegnazione Asset - {cn} -> GSI"
+    )
+
+    message_assegnazione_asset = (
+        f"Per la nuova risorsa {cn} assegnare asset:\n"
+        f"- PC Nome asset {pc_asset}\n"
+        f"- mouse ID {mouse_id_output} "
+        f"e SN {mouse_sn_output}\n"
+        f"- HUB Sandberg ID {hub_id_output}\n"
+    )
+
+    # --------------------------------------------------------
+    # 03 - Provisioning PC
+    # --------------------------------------------------------
+    subject_provisioning_pc = (
+        f"03 - Provisioning PC - {cn} -> GHDW"
+    )
+
+    message_provisioning_pc = (
+        "Ciao,\n"
+        f"per {cn} ritirare dal 599 "
+        "per CONFIGURAZIONE i seguenti asset:\n"
+        f"- PC Nome asset {pc_asset}\n"
+        f"- mouse ID {mouse_id_output} "
+        f"e SN {mouse_sn_output}\n"
+        f"- HUB Sandberg ID {hub_id_output}\n"
+        "\n"
+        f"la risorsa prende servizio {data_operativa}\n"
+    )
+
+    # --------------------------------------------------------
+    # 04 - Caricamento foto
+    # --------------------------------------------------------
+    subject_caricamento_foto = (
+        f"04 - Caricamento Foto - {cn} -> GA"
+    )
+
+    message_caricamento_foto = (
+        "Ciao,\n"
+        "si richiede il caricamento della foto "
+        f"in allegato per {cn}.\n"
+    )
+
+    # --------------------------------------------------------
+    # 05 - Firma digitale
+    # --------------------------------------------------------
+    subject_firma_digitale = (
+        f"05 - Firma digitale - {cn} -> MM"
+    )
+
+    message_firma_digitale = (
+        f"Assegnare Firma Digitale a {cn}.\n"
+    )
+
+    # --------------------------------------------------------
+    # 06 - Verifica ed eventuale modifica SIC
+    # --------------------------------------------------------
+    subject_verifica_sic = (
+        "06 - Verifica ed Eventuale Modifica SIC - "
+        f"{cn} -> GA"
+    )
+
+    message_verifica_sic = (
+        "Ciao, si richiede verifica che per utente "
+        f"{cn} sia indicato sul SIC con la seguente "
+        f'email "{mail_utente}".\n'
+    )
+
+    # --------------------------------------------------------
+    # 07 - Accesso intranet PSN
+    # --------------------------------------------------------
+    subject_accesso_psn = (
+        "07 - Accesso intranet PSN per dipendente "
+        "-> GITT -> GA"
+    )
+
+    message_accesso_psn = (
+        "Attività momentaneamente esclusa dal flusso "
+        "perché attualmente gestita via email.\n"
+    )
+
+    # --------------------------------------------------------
+    # 09 - Firma Asset
+    # --------------------------------------------------------
+    subject_firma_asset = (
+        f"09 - Firma Asset - {cn} -> GHDW"
+    )
+
+    message_firma_asset = (
+        "Ciao,\n"
+        f"si richiede il giorno {data_operativa} "
+        "di far firmare gli asset ritirati dal 599 "
+        f"per la consegna a {cn}.\n"
+    )
+
+    # --------------------------------------------------------
+    # Costruzione della guida completa
+    # --------------------------------------------------------
+    guida_flusso_lines = [
+        subject_assegnazione_asset,
+        message_assegnazione_asset,
+
+        subject_provisioning,
+        message_provisioning,
+
+        subject_provisioning_pc,
+        message_provisioning_pc,
+
+        subject_caricamento_foto,
+        message_caricamento_foto
+    ]
+
+    # Il punto 05 viene aggiunto solo se selezionato
+    if firma_digitale:
+        guida_flusso_lines.extend(
+            [
+                subject_firma_digitale,
+                message_firma_digitale
+            ]
+        )
+
+    # Il punto 06 viene aggiunto solo se il limite
+    # nome + cognome + 1 supera 20 caratteri
+    if verifica_sic_necessaria:
+        guida_flusso_lines.extend(
+            [
+                subject_verifica_sic,
+                message_verifica_sic
+            ]
+        )
+
+    # Punto 07 momentaneamente escluso,
+    # ma mostrato come nota operativa
+    guida_flusso_lines.extend(
+        [
+            subject_accesso_psn,
+            message_accesso_psn,
+
+            subject_dl,
+            message_dl,
+
+            subject_firma_asset,
+            message_firma_asset
+        ]
+    )
+
+    guida_flusso = "\n".join(
+        guida_flusso_lines
+    )
+
+    # --------------------------------------------------------
+    # Visualizzazione guida pratica completa
+    # --------------------------------------------------------
+    st.subheader(
+        "Guida pratica flusso operativo 01-09"
+    )
+
+    st.text(
+        guida_flusso
+    )
+
+    # --------------------------------------------------------
+    # Informazioni sui punti condizionali
+    # --------------------------------------------------------
+    if not firma_digitale:
+        st.info(
+            "Punto 05 non visualizzato: "
+            "la firma digitale non è stata selezionata."
+        )
+
+    if not verifica_sic_necessaria:
+        st.info(
+            "Punto 06 non visualizzato: "
+            f"nome + cognome + 1 corrisponde a "
+            f"{lunghezza_nome_cognome_sic} caratteri "
+            "e non supera il limite di 20."
+        )
+
+    # --------------------------------------------------------
+    # Visualizzazione messaggi già esistenti
+    # --------------------------------------------------------
+    st.subheader(
+        subject_provisioning
+    )
+
+    st.text(
+        message_provisioning
+    )
+
+    st.subheader(
+        subject_dl
+    )
+
+    st.text(
+        message_dl
+    )
 
     # --------------------------------------------------------
     # Anteprima file 1
@@ -1005,7 +1333,9 @@ if st.button("Genera CSV"):
         "Anteprima 2 - Casella"
     )
 
-    st.text(csv_casella)
+    st.text(
+        csv_casella
+    )
 
     # --------------------------------------------------------
     # Anteprima file 3
@@ -1029,7 +1359,9 @@ if st.button("Genera CSV"):
         "Anteprima 4 - Gruppi Entra ID"
     )
 
-    st.text(csv_entraid)
+    st.text(
+        csv_entraid
+    )
 
     # --------------------------------------------------------
     # Anteprima file 5
@@ -1118,6 +1450,14 @@ if st.button("Genera CSV"):
         zip_file.writestr(
             filename_computer,
             csv_computer
+        )
+
+        zip_file.writestr(
+            (
+                f"Guida_Flusso_"
+                f"{persona_nome_underscore}.txt"
+            ),
+            guida_flusso
         )
 
     zip_buffer.seek(0)
