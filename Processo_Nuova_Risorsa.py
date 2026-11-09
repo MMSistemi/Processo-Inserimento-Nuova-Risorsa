@@ -305,12 +305,15 @@ def genera_samaccountname(
     esterno=False
 ):
     nome_normalizzato = normalize_name(nome)
+
     secondo_nome_normalizzato = normalize_name(
         secondo_nome
     )
+
     cognome_normalizzato = normalize_name(
         cognome
     )
+
     secondo_cognome_normalizzato = normalize_name(
         secondo_cognome
     )
@@ -831,7 +834,7 @@ if st.button("Genera CSV"):
     )
 
     # ========================================================
-    # GENERAZIONE FILE PUNTO 02
+    # FILE DEL PUNTO 02
     # ========================================================
 
     # --------------------------------------------------------
@@ -1010,7 +1013,42 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Testo punto 02
+    # 01 - Assegnazione Asset
+    # --------------------------------------------------------
+    pc_asset = (
+        description
+        or "<PC>"
+    )
+
+    mouse_id_output = (
+        mouse_id
+        or "#id"
+    )
+
+    mouse_sn_output = (
+        mouse_sn
+        or "#sn"
+    )
+
+    hub_id_output = (
+        hub_id
+        or "#id"
+    )
+
+    subject_assegnazione_asset = (
+        f"01 - Assegnazione Asset - {cn} -> GSI"
+    )
+
+    message_assegnazione_asset = (
+        f"Per la nuova risorsa {cn} assegnare asset:\n"
+        f"- PC Nome asset {pc_asset}\n"
+        f"- mouse ID {mouse_id_output} "
+        f"e SN {mouse_sn_output}\n"
+        f"- HUB Sandberg ID {hub_id_output}\n"
+    )
+
+    # --------------------------------------------------------
+    # 02 - Provisioning utente
     # --------------------------------------------------------
     subject_provisioning = (
         "02 - Provisioning Utente "
@@ -1034,7 +1072,88 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Punto 08 - Liste distribuzione
+    # 03 - Provisioning PC
+    # --------------------------------------------------------
+    subject_provisioning_pc = (
+        f"03 - Provisioning PC - {cn} -> GHDW"
+    )
+
+    message_provisioning_pc = (
+        "Ciao,\n"
+        f"per {cn} ritirare dal 599 "
+        "per CONFIGURAZIONE i seguenti asset:\n"
+        f"- PC Nome asset {pc_asset}\n"
+        f"- mouse ID {mouse_id_output} "
+        f"e SN {mouse_sn_output}\n"
+        f"- HUB Sandberg ID {hub_id_output}\n"
+        "\n"
+        f"la risorsa prende servizio {data_operativa}\n"
+    )
+
+    # --------------------------------------------------------
+    # 04 - Caricamento foto
+    # --------------------------------------------------------
+    subject_caricamento_foto = (
+        f"04 - Caricamento Foto - {cn} -> GA"
+    )
+
+    message_caricamento_foto = (
+        "Ciao,\n"
+        "si richiede il caricamento della foto "
+        f"in allegato per {cn}.\n"
+    )
+
+    # --------------------------------------------------------
+    # 05 - Firma digitale
+    # --------------------------------------------------------
+    subject_firma_digitale = (
+        f"05 - Firma digitale - {cn} -> MM"
+    )
+
+    if firma_digitale:
+        message_firma_digitale = (
+            f"Assegnare Firma Digitale a {cn}.\n"
+        )
+    else:
+        message_firma_digitale = (
+            "Firma digitale non prevista "
+            "per questa risorsa.\n"
+        )
+
+    # --------------------------------------------------------
+    # 06 - Verifica ed Eventuale Modifica SIC
+    # Sempre visualizzato con il testo richiesto
+    # --------------------------------------------------------
+    mail_utente = (
+        f"{sam}@consip.it"
+    )
+
+    subject_verifica_sic = (
+        "06 - Verifica ed Eventuale Modifica SIC - "
+        f"{cn} -> GA"
+    )
+
+    message_verifica_sic = (
+        "Ciao, si richiede verifica che per utente "
+        f"{cn} sia indicato sul SIC con la seguente "
+        f'email "{mail_utente}"'
+    )
+
+    # --------------------------------------------------------
+    # 07 - Accesso intranet PSN
+    # --------------------------------------------------------
+    subject_accesso_psn = (
+        "07 - Accesso intranet PSN per dipendente "
+        "-> GITT -> GA"
+    )
+
+    message_accesso_psn = (
+        "Attività momentaneamente esclusa dal flusso "
+        "perché attualmente gestita via email.\n"
+    )
+
+    # --------------------------------------------------------
+    # 08 - Lista di distribuzione
     # --------------------------------------------------------
     subject_dl = (
         "08 - Lista di distribuzione standard -> GIIT"
@@ -1058,224 +1177,8 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Dati asset
+    # 09 - Firma Asset
     # --------------------------------------------------------
-    pc_asset = (
-        description
-        or "<PC>"
-    )
-
-    mouse_id_output = (
-        mouse_id
-        or "#id"
-    )
-
-    mouse_sn_output = (
-        mouse_sn
-        or "#sn"
-    )
-
-    hub_id_output = (
-        hub_id
-        or "#id"
-    )
-
-    mail_utente = (
-        f"{sam}@consip.it"
-    )
-
-    # --------------------------------------------------------
-    # Calcolo SIC
-    # --------------------------------------------------------
-    lunghezza_nome_cognome_sic = (
-        len(normalize_name(nome))
-        + len(normalize_name(cognome))
-        + 1
-    )
-
-    verifica_sic_necessaria = (
-        lunghezza_nome_cognome_sic > 20
-    )
-
-    # --------------------------------------------------------
-    # Creazione bundle ZIP
-    # --------------------------------------------------------
-    zip_buffer = io.BytesIO()
-
-    # La guida testuale per lo ZIP viene costruita
-    # prima della visualizzazione.
-    guida_flusso_lines = []
-
-    # ========================================================
-    # 01 - ASSEGNAZIONE ASSET
-    # ========================================================
-    subject_assegnazione_asset = (
-        f"01 - Assegnazione Asset - {cn} -> GSI"
-    )
-
-    message_assegnazione_asset = (
-        f"Per la nuova risorsa {cn} assegnare asset:\n"
-        f"- PC Nome asset {pc_asset}\n"
-        f"- mouse ID {mouse_id_output} "
-        f"e SN {mouse_sn_output}\n"
-        f"- HUB Sandberg ID {hub_id_output}\n"
-    )
-
-    guida_flusso_lines.extend(
-        [
-            subject_assegnazione_asset,
-            message_assegnazione_asset
-        ]
-    )
-
-    # ========================================================
-    # 02 - PROVISIONING UTENTE
-    # ========================================================
-    guida_flusso_lines.extend(
-        [
-            subject_provisioning,
-            message_provisioning
-        ]
-    )
-
-    # ========================================================
-    # 03 - PROVISIONING PC
-    # ========================================================
-    subject_provisioning_pc = (
-        f"03 - Provisioning PC - {cn} -> GHDW"
-    )
-
-    message_provisioning_pc = (
-        "Ciao,\n"
-        f"per {cn} ritirare dal 599 "
-        "per CONFIGURAZIONE i seguenti asset:\n"
-        f"- PC Nome asset {pc_asset}\n"
-        f"- mouse ID {mouse_id_output} "
-        f"e SN {mouse_sn_output}\n"
-        f"- HUB Sandberg ID {hub_id_output}\n"
-        "\n"
-        f"la risorsa prende servizio {data_operativa}\n"
-    )
-
-    guida_flusso_lines.extend(
-        [
-            subject_provisioning_pc,
-            message_provisioning_pc
-        ]
-    )
-
-    # ========================================================
-    # 04 - CARICAMENTO FOTO
-    # ========================================================
-    subject_caricamento_foto = (
-        f"04 - Caricamento Foto - {cn} -> GA"
-    )
-
-    message_caricamento_foto = (
-        "Ciao,\n"
-        "si richiede il caricamento della foto "
-        f"in allegato per {cn}.\n"
-    )
-
-    guida_flusso_lines.extend(
-        [
-            subject_caricamento_foto,
-            message_caricamento_foto
-        ]
-    )
-
-    # ========================================================
-    # 05 - FIRMA DIGITALE
-    # ========================================================
-    subject_firma_digitale = (
-        f"05 - Firma digitale - {cn} -> MM"
-    )
-
-    message_firma_digitale = (
-        f"Assegnare Firma Digitale a {cn}.\n"
-    )
-
-    if firma_digitale:
-        guida_flusso_lines.extend(
-            [
-                subject_firma_digitale,
-                message_firma_digitale
-            ]
-        )
-    else:
-        guida_flusso_lines.extend(
-            [
-                subject_firma_digitale,
-                (
-                    "Firma digitale non prevista "
-                    "per questa risorsa.\n"
-                )
-            ]
-        )
-
-    # ========================================================
-    # 06 - VERIFICA SIC
-    # VIENE SEMPRE VISUALIZZATO
-    # ========================================================
-    subject_verifica_sic = (
-        "06 - Verifica ed Eventuale Modifica SIC - "
-        f"{cn} -> GA"
-    )
-
-    if verifica_sic_necessaria:
-        message_verifica_sic = (
-            "Ciao, si richiede verifica che per utente "
-            f"{cn} sia indicato sul SIC con la seguente "
-            f'email "{mail_utente}".\n'
-        )
-    else:
-        message_verifica_sic = (
-            "Verifica SIC non necessaria.\n"
-            f"Nome + Cognome + 1 = "
-            f"{lunghezza_nome_cognome_sic} caratteri, "
-            "quindi non supera il limite di 20."
-        )
-
-    guida_flusso_lines.extend(
-        [
-            subject_verifica_sic,
-            message_verifica_sic
-        ]
-    )
-
-    # ========================================================
-    # 07 - ACCESSO INTRANET PSN
-    # ========================================================
-    subject_accesso_psn = (
-        "07 - Accesso intranet PSN per dipendente "
-        "-> GITT -> GA"
-    )
-
-    message_accesso_psn = (
-        "Attività momentaneamente esclusa dal flusso "
-        "perché attualmente gestita via email.\n"
-    )
-
-    guida_flusso_lines.extend(
-        [
-            subject_accesso_psn,
-            message_accesso_psn
-        ]
-    )
-
-    # ========================================================
-    # 08 - LISTA DI DISTRIBUZIONE
-    # ========================================================
-    guida_flusso_lines.extend(
-        [
-            subject_dl,
-            message_dl
-        ]
-    )
-
-    # ========================================================
-    # 09 - FIRMA ASSET
-    # ========================================================
     subject_firma_asset = (
         f"09 - Firma Asset - {cn} -> GHDW"
     )
@@ -1287,20 +1190,47 @@ if st.button("Genera CSV"):
         f"per la consegna a {cn}.\n"
     )
 
-    guida_flusso_lines.extend(
-        [
-            subject_firma_asset,
-            message_firma_asset
-        ]
-    )
+    # --------------------------------------------------------
+    # Guida completa in ordine da 01 a 09
+    # --------------------------------------------------------
+    guida_flusso_lines = [
+        subject_assegnazione_asset,
+        message_assegnazione_asset,
+
+        subject_provisioning,
+        message_provisioning,
+
+        subject_provisioning_pc,
+        message_provisioning_pc,
+
+        subject_caricamento_foto,
+        message_caricamento_foto,
+
+        subject_firma_digitale,
+        message_firma_digitale,
+
+        subject_verifica_sic,
+        message_verifica_sic,
+
+        subject_accesso_psn,
+        message_accesso_psn,
+
+        subject_dl,
+        message_dl,
+
+        subject_firma_asset,
+        message_firma_asset
+    ]
 
     guida_flusso = "\n\n".join(
         guida_flusso_lines
     )
 
     # --------------------------------------------------------
-    # ZIP completo
+    # Creazione bundle ZIP
     # --------------------------------------------------------
+    zip_buffer = io.BytesIO()
+
     with zipfile.ZipFile(
         zip_buffer,
         "w",
@@ -1380,7 +1310,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Anteprima file 1
+    # File 1 - Utenza
     # --------------------------------------------------------
     st.markdown(
         f"**1. {filename_utente}**"
@@ -1402,7 +1332,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Anteprima file 2
+    # File 2 - Casella
     # --------------------------------------------------------
     st.markdown(
         f"**2. {filename_casella}**"
@@ -1420,7 +1350,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Anteprima file 3
+    # File 3 - Gruppi AD
     # --------------------------------------------------------
     st.markdown(
         f"**3. {filename_gruppi_ad}**"
@@ -1442,7 +1372,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Anteprima file 4
+    # File 4 - Gruppi Entra ID
     # --------------------------------------------------------
     st.markdown(
         f"**4. {filename_entraid}**"
@@ -1460,7 +1390,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # File computer
+    # File 5 - Computer
     # --------------------------------------------------------
     st.markdown(
         f"**5. {filename_computer}**"
@@ -1482,7 +1412,7 @@ if st.button("Genera CSV"):
     )
 
     # --------------------------------------------------------
-    # Download bundle in corrispondenza del punto 02
+    # Download bundle completo in corrispondenza del punto 02
     # --------------------------------------------------------
     st.markdown(
         "**Bundle completo del provisioning:**"
@@ -1534,48 +1464,23 @@ if st.button("Genera CSV"):
         st.text(
             message_firma_digitale
         )
-
     else:
         st.info(
-            "Firma digitale non prevista "
-            "per questa risorsa."
+            message_firma_digitale
         )
 
     st.divider()
 
     # ========================================================
-    # 06 - VERIFICA SIC
-    # SEMPRE VISUALIZZATO
+    # 06 - VERIFICA ED EVENTUALE MODIFICA SIC
     # ========================================================
     st.subheader(
         subject_verifica_sic
     )
 
-    if verifica_sic_necessaria:
-
-        st.text(
-            message_verifica_sic
-        )
-
-        st.warning(
-            f"Nome + Cognome + 1 = "
-            f"{lunghezza_nome_cognome_sic} caratteri. "
-            "Il valore supera il limite di 20: "
-            "verifica SIC necessaria."
-        )
-
-    else:
-
-        st.text(
-            message_verifica_sic
-        )
-
-        st.success(
-            f"Nome + Cognome + 1 = "
-            f"{lunghezza_nome_cognome_sic} caratteri. "
-            "Il valore non supera il limite di 20: "
-            "nessuna modifica SIC necessaria."
-        )
+    st.text(
+        message_verifica_sic
+    )
 
     st.divider()
 
