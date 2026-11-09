@@ -1251,4 +1251,371 @@ if st.button("Genera CSV"):
         "-> GITT -> GA"
     )
 
-    message_accesso_psn
+    message_accesso_psn = (
+        "Attività momentaneamente esclusa dal flusso "
+        "perché attualmente gestita via email.\n"
+    )
+
+    guida_flusso_lines.extend(
+        [
+            subject_accesso_psn,
+            message_accesso_psn
+        ]
+    )
+
+    # ========================================================
+    # 08 - LISTA DI DISTRIBUZIONE
+    # ========================================================
+    guida_flusso_lines.extend(
+        [
+            subject_dl,
+            message_dl
+        ]
+    )
+
+    # ========================================================
+    # 09 - FIRMA ASSET
+    # ========================================================
+    subject_firma_asset = (
+        f"09 - Firma Asset - {cn} -> GHDW"
+    )
+
+    message_firma_asset = (
+        "Ciao,\n"
+        f"si richiede il giorno {data_operativa} "
+        "di far firmare gli asset ritirati dal 599 "
+        f"per la consegna a {cn}.\n"
+    )
+
+    guida_flusso_lines.extend(
+        [
+            subject_firma_asset,
+            message_firma_asset
+        ]
+    )
+
+    guida_flusso = "\n\n".join(
+        guida_flusso_lines
+    )
+
+    # --------------------------------------------------------
+    # ZIP completo
+    # --------------------------------------------------------
+    with zipfile.ZipFile(
+        zip_buffer,
+        "w",
+        zipfile.ZIP_DEFLATED
+    ) as zip_file:
+
+        zip_file.writestr(
+            filename_utente,
+            csv_utente
+        )
+
+        zip_file.writestr(
+            filename_casella,
+            csv_casella
+        )
+
+        zip_file.writestr(
+            filename_gruppi_ad,
+            csv_gruppi_ad
+        )
+
+        zip_file.writestr(
+            filename_entraid,
+            csv_entraid
+        )
+
+        zip_file.writestr(
+            filename_computer,
+            csv_computer
+        )
+
+        zip_file.writestr(
+            (
+                f"Guida_Flusso_"
+                f"{persona_nome_underscore}.txt"
+            ),
+            guida_flusso
+        )
+
+    zip_buffer.seek(0)
+
+    bundle_name = (
+        f"Provisioning_"
+        f"{persona_nome_underscore}.zip"
+    )
+
+    # ========================================================
+    # VISUALIZZAZIONE ORDINATA DEL FLUSSO
+    # ========================================================
+
+    # ========================================================
+    # 01 - ASSEGNAZIONE ASSET
+    # ========================================================
+    st.subheader(
+        subject_assegnazione_asset
+    )
+
+    st.text(
+        message_assegnazione_asset
+    )
+
+    st.divider()
+
+    # ========================================================
+    # 02 - PROVISIONING UTENTE
+    # ========================================================
+    st.subheader(
+        subject_provisioning
+    )
+
+    st.text(
+        message_provisioning
+    )
+
+    st.markdown(
+        "**File collegati al punto 02:**"
+    )
+
+    # --------------------------------------------------------
+    # Anteprima file 1
+    # --------------------------------------------------------
+    st.markdown(
+        f"**1. {filename_utente}**"
+    )
+
+    st.dataframe(
+        pd.DataFrame(
+            [row_utente],
+            columns=HEADER_UTENTE
+        ),
+        use_container_width=True
+    )
+
+    st.download_button(
+        "Scarica 1 - Utenza",
+        data=csv_utente,
+        file_name=filename_utente,
+        mime="text/csv"
+    )
+
+    # --------------------------------------------------------
+    # Anteprima file 2
+    # --------------------------------------------------------
+    st.markdown(
+        f"**2. {filename_casella}**"
+    )
+
+    st.text(
+        csv_casella
+    )
+
+    st.download_button(
+        "Scarica 2 - Casella",
+        data=csv_casella,
+        file_name=filename_casella,
+        mime="text/csv"
+    )
+
+    # --------------------------------------------------------
+    # Anteprima file 3
+    # --------------------------------------------------------
+    st.markdown(
+        f"**3. {filename_gruppi_ad}**"
+    )
+
+    st.dataframe(
+        pd.DataFrame(
+            [row_gruppi_ad],
+            columns=HEADER_UTENTE
+        ),
+        use_container_width=True
+    )
+
+    st.download_button(
+        "Scarica 3 - Gruppi AD",
+        data=csv_gruppi_ad,
+        file_name=filename_gruppi_ad,
+        mime="text/csv"
+    )
+
+    # --------------------------------------------------------
+    # Anteprima file 4
+    # --------------------------------------------------------
+    st.markdown(
+        f"**4. {filename_entraid}**"
+    )
+
+    st.text(
+        csv_entraid
+    )
+
+    st.download_button(
+        "Scarica 4 - Gruppi Entra ID",
+        data=csv_entraid,
+        file_name=filename_entraid,
+        mime="text/csv"
+    )
+
+    # --------------------------------------------------------
+    # File computer
+    # --------------------------------------------------------
+    st.markdown(
+        f"**5. {filename_computer}**"
+    )
+
+    st.dataframe(
+        pd.DataFrame(
+            [row_computer],
+            columns=HEADER_COMPUTER
+        ),
+        use_container_width=True
+    )
+
+    st.download_button(
+        "Scarica 5 - Computer",
+        data=csv_computer,
+        file_name=filename_computer,
+        mime="text/csv"
+    )
+
+    # --------------------------------------------------------
+    # Download bundle in corrispondenza del punto 02
+    # --------------------------------------------------------
+    st.markdown(
+        "**Bundle completo del provisioning:**"
+    )
+
+    st.download_button(
+        "📦 Scarica bundle completo ZIP",
+        data=zip_buffer.getvalue(),
+        file_name=bundle_name,
+        mime="application/zip"
+    )
+
+    st.divider()
+
+    # ========================================================
+    # 03 - PROVISIONING PC
+    # ========================================================
+    st.subheader(
+        subject_provisioning_pc
+    )
+
+    st.text(
+        message_provisioning_pc
+    )
+
+    st.divider()
+
+    # ========================================================
+    # 04 - CARICAMENTO FOTO
+    # ========================================================
+    st.subheader(
+        subject_caricamento_foto
+    )
+
+    st.text(
+        message_caricamento_foto
+    )
+
+    st.divider()
+
+    # ========================================================
+    # 05 - FIRMA DIGITALE
+    # ========================================================
+    st.subheader(
+        subject_firma_digitale
+    )
+
+    if firma_digitale:
+        st.text(
+            message_firma_digitale
+        )
+
+    else:
+        st.info(
+            "Firma digitale non prevista "
+            "per questa risorsa."
+        )
+
+    st.divider()
+
+    # ========================================================
+    # 06 - VERIFICA SIC
+    # SEMPRE VISUALIZZATO
+    # ========================================================
+    st.subheader(
+        subject_verifica_sic
+    )
+
+    if verifica_sic_necessaria:
+
+        st.text(
+            message_verifica_sic
+        )
+
+        st.warning(
+            f"Nome + Cognome + 1 = "
+            f"{lunghezza_nome_cognome_sic} caratteri. "
+            "Il valore supera il limite di 20: "
+            "verifica SIC necessaria."
+        )
+
+    else:
+
+        st.text(
+            message_verifica_sic
+        )
+
+        st.success(
+            f"Nome + Cognome + 1 = "
+            f"{lunghezza_nome_cognome_sic} caratteri. "
+            "Il valore non supera il limite di 20: "
+            "nessuna modifica SIC necessaria."
+        )
+
+    st.divider()
+
+    # ========================================================
+    # 07 - ACCESSO INTRANET PSN
+    # ========================================================
+    st.subheader(
+        subject_accesso_psn
+    )
+
+    st.info(
+        message_accesso_psn
+    )
+
+    st.divider()
+
+    # ========================================================
+    # 08 - LISTA DI DISTRIBUZIONE
+    # ========================================================
+    st.subheader(
+        subject_dl
+    )
+
+    st.text(
+        message_dl
+    )
+
+    st.divider()
+
+    # ========================================================
+    # 09 - FIRMA ASSET
+    # ========================================================
+    st.subheader(
+        subject_firma_asset
+    )
+
+    st.text(
+        message_firma_asset
+    )
+
+    st.success(
+        f"Flusso completo generato correttamente per '{sam}'."
+    )
