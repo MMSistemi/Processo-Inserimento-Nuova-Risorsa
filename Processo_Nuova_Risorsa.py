@@ -1290,7 +1290,7 @@ if st.button(
         "dei gruppi AD\n"
         f"4. {filename_entraid} per inserimento "
         "dei gruppi EntraID\n"
-        f"5. {filename_computer} per Aggiornamento Computer su AD con riferimenti utente, effettuare questa attività il giorno {data_operativa}."\n"
+        f"5. {filename_computer} per Aggiornamento Computer su AD con riferimenti utente, effettuare questa attività il giorno {data_operativa}.\n"
         f"6. {filename_dl} per l'inserimento "
         "nelle Liste di Distribuzione , effettuare questa attività il giorno {data_operativa}.\n"
     )
