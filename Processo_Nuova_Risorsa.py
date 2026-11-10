@@ -1272,7 +1272,7 @@ if st.button(
     subject_giit = (
         "02 - Provisioning Utente "
         "(utenza/Casella/Profilazione) + "
-        "Profilazione Computer + "
+        "Modifica AD Computer + "
         "Liste di Distribuzione - "
         f"{cn} → GIIT"
     )
@@ -1293,7 +1293,6 @@ if st.button(
         f"5. {filename_computer} per Aggiornamento Computer su AD con riferimenti utente, effettuare questa attività il giorno {data_operativa}."\n"
         f"6. {filename_dl} per l'inserimento "
         "nelle Liste di Distribuzione , effettuare questa attività il giorno {data_operativa}.\n"
-        "\n"
     )
 
     # ========================================================
