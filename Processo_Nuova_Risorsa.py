@@ -986,7 +986,7 @@ if st.button(
         or "<PC>"
     )
 
-     data_operativa_output = (
+    data_operativa_output = (
         data_operativa
         or "<data inizio>"
     )
