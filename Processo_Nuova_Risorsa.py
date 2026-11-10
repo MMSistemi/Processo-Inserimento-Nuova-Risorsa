@@ -986,7 +986,7 @@ if st.button(
         or "<PC>"
     )
 
-    data_operativa_output = (
+     = (
         data_operativa
         or "<data inizio>"
     )
@@ -1194,7 +1194,7 @@ if st.button(
     dl_lines = [
         (
             f"{sam}@consip.it "
-            f"in data {data_operativa_output} "
+            f"in data {} "
             "inserire nelle DL:"
         )
     ]
@@ -1282,17 +1282,12 @@ if st.button(
         "si richiede di elaborare i file contenuti "
         "nella cartella compressa .zip "
         "nel seguente ordine:\n"
-        f"1. {filename_utente} per la creazione "
-        "di un'utenza On prem su AD\n"
-        f"2. {filename_casella} per la creazione "
-        "di un'utenza ibrida come indicato\n"
-        f"3. {filename_gruppi_ad} per inserimento "
-        "dei gruppi AD\n"
-        f"4. {filename_entraid} per inserimento "
-        "dei gruppi EntraID\n"
+        f"1. {filename_utente} per la creazione di un'utenza On prem su AD\n"
+        f"2. {filename_casella} per la creazione di un'utenza ibrida come indicato\n"
+        f"3. {filename_gruppi_ad} per inserimento dei gruppi AD\n"
+        f"4. {filename_entraid} per inserimento dei gruppi EntraID\n"
         f"5. {filename_computer} per Aggiornamento Computer su AD con riferimenti utente, effettuare questa attività il giorno {data_operativa_output}.\n"
-        f"6. {filename_dl} per l'inserimento "
-        "nelle Liste di Distribuzione , effettuare questa attività il giorno {data_operativa_output}.\n"
+        f"6. {filename_dl} per l'inserimento nelle Liste di Distribuzione , effettuare questa attività il giorno {data_operativa_output}"
     )
 
     # ========================================================
