@@ -920,6 +920,7 @@ if st.button(
 
         st.stop()
 
+
     # --------------------------------------------------------
     # Dati principali
     # --------------------------------------------------------
@@ -1006,6 +1007,7 @@ if st.button(
         or "#id"
     )
 
+
     # ========================================================
     # FILE 1 - UTENZA
     # ========================================================
@@ -1039,6 +1041,7 @@ if st.button(
         row_utente,
         HEADER_UTENTE
     )
+
 
     # ========================================================
     # FILE 2 - CASELLA
@@ -1076,6 +1079,7 @@ if st.button(
         )
         + "\n"
     )
+
 
     # ========================================================
     # FILE 3 - PROFILAZIONE GRUPPI AD
@@ -1131,6 +1135,7 @@ if st.button(
         HEADER_UTENTE
     )
 
+
     # ========================================================
     # FILE 4 - PROFILAZIONE GRUPPI ENTRA ID
     # ========================================================
@@ -1165,6 +1170,7 @@ if st.button(
         + "\n"
     )
 
+
     # ========================================================
     # FILE 5 - COMPUTER
     # Da elaborare alla data operatività
@@ -1187,6 +1193,7 @@ if st.button(
         HEADER_COMPUTER
     )
 
+
     # ========================================================
     # FILE 6 - LISTE DI DISTRIBUZIONE
     # Da elaborare alla data operatività
@@ -1194,7 +1201,7 @@ if st.button(
     dl_lines = [
         (
             f"{sam}@consip.it "
-            f"in data {} "
+            f"in data {data_operativa_output} "
             "inserire nelle DL:"
         )
     ]
@@ -1217,6 +1224,7 @@ if st.button(
         )
         + "\n"
     )
+
 
     # ========================================================
     # NOMI FILE
@@ -1248,6 +1256,7 @@ if st.button(
         f"6_{persona_nome_file}_DL.csv"
     )
 
+
     # ========================================================
     # 01 - GSI
     # ASSEGNAZIONE ASSET
@@ -1264,6 +1273,7 @@ if st.button(
         f"e SN {mouse_sn_output}\n"
         f"- HUB Sandberg ID {hub_id_output}"
     )
+
 
     # ========================================================
     # 02 - GIIT
@@ -1286,9 +1296,12 @@ if st.button(
         f"2. {filename_casella} per la creazione di un'utenza ibrida come indicato\n"
         f"3. {filename_gruppi_ad} per inserimento dei gruppi AD\n"
         f"4. {filename_entraid} per inserimento dei gruppi EntraID\n"
-        f"5. {filename_computer} per Aggiornamento Computer su AD con riferimenti utente, effettuare questa attività il giorno {data_operativa_output}.\n"
-        f"6. {filename_dl} per l'inserimento nelle Liste di Distribuzione , effettuare questa attività il giorno {data_operativa_output}"
+        f"5. {filename_computer} per Aggiornamento Computer su AD con riferimenti utente, "
+        f"effettuare questa attività il giorno {data_operativa_output}.\n"
+        f"6. {filename_dl} per l'inserimento nelle Liste di Distribuzione, "
+        f"effettuare questa attività il giorno {data_operativa_output}"
     )
+
 
     # ========================================================
     # 03 - GHDW
@@ -1312,11 +1325,12 @@ if st.button(
         f"{data_operativa_output}.\n"
         "\n"
         "Attività da effettuare:\n"
-        f"1. Configurare gli asset indicati.\n"
+        "1. Configurare gli asset indicati.\n"
         f"2. Il giorno {data_operativa_output} "
         "far firmare gli asset ritirati dal 599 "
         f"per la consegna a {cn}."
     )
+
 
     # ========================================================
     # 04 - GA
@@ -1344,6 +1358,7 @@ if st.button(
         "perché attualmente gestita via email."
     )
 
+
     # ========================================================
     # 05 - MM
     # Firma digitale
@@ -1365,6 +1380,7 @@ if st.button(
             "Firma digitale non prevista "
             "per questa risorsa."
         )
+
 
     # ========================================================
     # GUIDA COMPLETA
@@ -1395,6 +1411,7 @@ if st.button(
         f"Guida_Flusso_"
         f"{persona_nome_underscore}.txt"
     )
+
 
     # ========================================================
     # CREAZIONE BUNDLE ZIP
@@ -1449,6 +1466,7 @@ if st.button(
         f"{persona_nome_underscore}.zip"
     )
 
+
     # ========================================================
     # VISUALIZZAZIONE DEL FLUSSO
     # ========================================================
@@ -1466,6 +1484,7 @@ if st.button(
 
     st.divider()
 
+
     # ========================================================
     # 02 - GIIT
     # ========================================================
@@ -1480,6 +1499,7 @@ if st.button(
     st.markdown(
         "**File di competenza GIIT:**"
     )
+
 
     # --------------------------------------------------------
     # File 1 - Utenza
@@ -1504,6 +1524,7 @@ if st.button(
         key="download_utente"
     )
 
+
     # --------------------------------------------------------
     # File 2 - Casella
     # --------------------------------------------------------
@@ -1522,6 +1543,7 @@ if st.button(
         mime="text/csv",
         key="download_casella"
     )
+
 
     # --------------------------------------------------------
     # File 3 - Gruppi AD
@@ -1546,6 +1568,7 @@ if st.button(
         key="download_gruppi_ad"
     )
 
+
     # --------------------------------------------------------
     # File 4 - Gruppi Entra ID
     # --------------------------------------------------------
@@ -1564,6 +1587,7 @@ if st.button(
         mime="text/csv",
         key="download_entraid"
     )
+
 
     # --------------------------------------------------------
     # File 5 - Computer
@@ -1593,6 +1617,7 @@ if st.button(
         key="download_computer"
     )
 
+
     # --------------------------------------------------------
     # File 6 - Liste di distribuzione
     # --------------------------------------------------------
@@ -1617,6 +1642,7 @@ if st.button(
         key="download_dl"
     )
 
+
     # --------------------------------------------------------
     # Bundle completo
     # --------------------------------------------------------
@@ -1634,6 +1660,7 @@ if st.button(
 
     st.divider()
 
+
     # ========================================================
     # 03 - GHDW
     # ========================================================
@@ -1647,6 +1674,7 @@ if st.button(
 
     st.divider()
 
+
     # ========================================================
     # 04 - GA
     # ========================================================
@@ -1659,6 +1687,7 @@ if st.button(
     )
 
     st.divider()
+
 
     # ========================================================
     # 05 - MM
@@ -1678,6 +1707,7 @@ if st.button(
         st.info(
             message_mm
         )
+
 
     st.success(
         f"Flusso completo generato correttamente per '{sam}'."
