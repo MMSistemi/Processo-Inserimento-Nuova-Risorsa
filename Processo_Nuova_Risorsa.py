@@ -7,9 +7,10 @@ import zipfile
 
 
 # ------------------------------------------------------------
-# Caricamento configurazione da Excel caricato dall'utente
+# Caricamento configurazione da Excel
 # ------------------------------------------------------------
 def load_config_from_bytes(data: bytes):
+
     cfg = pd.read_excel(
         io.BytesIO(data),
         sheet_name=None,
@@ -21,8 +22,11 @@ def load_config_from_bytes(data: bytes):
     else:
         ris = pd.DataFrame()
 
+    # --------------------------------------------------------
     # Normalizzazione colonne
+    # --------------------------------------------------------
     if not ris.empty:
+
         ris = ris.rename(
             columns={
                 column: str(column).strip()
@@ -32,7 +36,9 @@ def load_config_from_bytes(data: bytes):
 
         if "Tipo" in ris.columns and "TIPO" not in ris.columns:
             ris = ris.rename(
-                columns={"Tipo": "TIPO"}
+                columns={
+                    "Tipo": "TIPO"
+                }
             )
 
         for column in [
@@ -55,13 +61,21 @@ def load_config_from_bytes(data: bytes):
         "Label/Gruppi/Value"
     }
 
-    if not ris.empty and required_columns.issubset(ris.columns):
+    if (
+        not ris.empty
+        and required_columns.issubset(ris.columns)
+    ):
 
+        # ----------------------------------------------------
         # OU
+        # ----------------------------------------------------
         ou_df = ris[
             ris["Section"] == "OU"
         ][
-            ["Key/App", "Label/Gruppi/Value"]
+            [
+                "Key/App",
+                "Label/Gruppi/Value"
+            ]
         ].rename(
             columns={
                 "Key/App": "key",
@@ -76,11 +90,16 @@ def load_config_from_bytes(data: bytes):
             )
         )
 
+        # ----------------------------------------------------
         # Inserimento gruppi
+        # ----------------------------------------------------
         gruppi_df = ris[
             ris["Section"] == "InserimentoGruppi"
         ][
-            ["Key/App", "Label/Gruppi/Value"]
+            [
+                "Key/App",
+                "Label/Gruppi/Value"
+            ]
         ].rename(
             columns={
                 "Key/App": "app",
@@ -95,11 +114,16 @@ def load_config_from_bytes(data: bytes):
             )
         )
 
+        # ----------------------------------------------------
         # Defaults
+        # ----------------------------------------------------
         defaults_df = ris[
             ris["Section"] == "Defaults"
         ][
-            ["Key/App", "Label/Gruppi/Value"]
+            [
+                "Key/App",
+                "Label/Gruppi/Value"
+            ]
         ].rename(
             columns={
                 "Key/App": "key",
@@ -115,12 +139,15 @@ def load_config_from_bytes(data: bytes):
         )
 
     else:
+
         ou_options = {}
         gruppi = {}
         defaults = {}
 
-    # Estrazione di tutte le righe Defaults con TIPO = PEL
-    # Viene mantenuto l'ordine originale del foglio Excel.
+    # --------------------------------------------------------
+    # Estrazione delle righe Defaults con TIPO = PEL
+    # Mantiene l'ordine originale del foglio Excel
+    # --------------------------------------------------------
     pel_items = []
 
     if (
@@ -128,15 +155,23 @@ def load_config_from_bytes(data: bytes):
         and required_columns.issubset(ris.columns)
         and "TIPO" in ris.columns
     ):
+
         pel_df = ris[
             (ris["Section"] == "Defaults")
             & (ris["TIPO"].str.upper() == "PEL")
         ][
-            ["Key/App", "Label/Gruppi/Value"]
+            [
+                "Key/App",
+                "Label/Gruppi/Value"
+            ]
         ]
 
         for _, row in pel_df.iterrows():
-            key = str(row["Key/App"]).strip()
+
+            key = str(
+                row["Key/App"]
+            ).strip()
+
             value = str(
                 row["Label/Gruppi/Value"]
             ).strip()
@@ -146,10 +181,13 @@ def load_config_from_bytes(data: bytes):
                     (key, value)
                 )
 
+    # --------------------------------------------------------
     # Estrazione organigramma
+    # --------------------------------------------------------
     organigramma = {}
 
     if "organigramma" in cfg:
+
         organigramma_df = (
             cfg["organigramma"]
             .iloc[:, :2]
@@ -181,7 +219,8 @@ def load_config_from_bytes(data: bytes):
 # Configurazione pagina
 # ------------------------------------------------------------
 st.set_page_config(
-    page_title="1.1 Nuova Risorsa Interna"
+    page_title="1.1 Nuova Risorsa Interna",
+    layout="wide"
 )
 
 st.title(
@@ -197,15 +236,17 @@ config_file = st.file_uploader(
     type=["xlsx"],
     help=(
         "Deve contenere il foglio 'Risorsa Interna' "
-        "con il campo Section"
+        "con il campo Section."
     )
 )
 
 if not config_file:
+
     st.warning(
         "Per favore carica il file di configurazione "
         "per continuare."
     )
+
     st.stop()
 
 
@@ -224,6 +265,7 @@ if not config_file:
 # Funzioni di gestione configurazione
 # ------------------------------------------------------------
 def split_values(value):
+
     return [
         item.strip()
         for item in str(value).split(";")
@@ -231,7 +273,23 @@ def split_values(value):
     ]
 
 
+def unique_in_order(values):
+
+    result = []
+
+    for value in values:
+
+        value = str(value).strip()
+
+        if value and value not in result:
+            result.append(value)
+
+    return result
+
+
+# ------------------------------------------------------------
 # Liste di distribuzione
+# ------------------------------------------------------------
 dl_standard = split_values(
     defaults.get(
         "dl_standard",
@@ -248,12 +306,14 @@ dl_vip = split_values(
 
 
 # ------------------------------------------------------------
-# Gruppi AD letti da tutte le chiavi grp_o365_*
+# Gruppi AD letti dalle chiavi grp_o365_*
 # ------------------------------------------------------------
 o365_groups = []
 
 for key, value in defaults.items():
+
     if str(key).startswith("grp_o365_") and value:
+
         for group in split_values(value):
 
             # Correzione automatica nel caso manchi la O iniziale
@@ -264,7 +324,9 @@ for key, value in defaults.items():
                 o365_groups.append(group)
 
 
+# ------------------------------------------------------------
 # Percorso archivio
+# ------------------------------------------------------------
 ARCHIVE_PATH = (
     r"\\srv_dati.consip.tesoro.it"
     r"\AreaCondivisa\DEPSI\IC\AD_Modifiche"
@@ -275,6 +337,7 @@ ARCHIVE_PATH = (
 # Funzioni di utilità
 # ------------------------------------------------------------
 def normalize_name(value: str) -> str:
+
     normalized = unicodedata.normalize(
         "NFKD",
         value
@@ -304,7 +367,10 @@ def genera_samaccountname(
     secondo_cognome="",
     esterno=False
 ):
-    nome_normalizzato = normalize_name(nome)
+
+    nome_normalizzato = normalize_name(
+        nome
+    )
 
     secondo_nome_normalizzato = normalize_name(
         secondo_nome
@@ -357,6 +423,7 @@ def build_full_name(
     secondo_nome,
     esterno=False
 ):
+
     parts = [
         part
         for part in [
@@ -368,24 +435,14 @@ def build_full_name(
         if part
     ]
 
-    full_name = " ".join(parts)
+    full_name = " ".join(
+        parts
+    )
 
     if esterno:
         full_name += " (esterno)"
 
     return full_name
-
-
-def unique_in_order(values):
-    result = []
-
-    for value in values:
-        value = str(value).strip()
-
-        if value and value not in result:
-            result.append(value)
-
-    return result
 
 
 # ------------------------------------------------------------
@@ -395,20 +452,20 @@ def build_entraid_groups(
     pel_items,
     selected_key
 ):
+
     """
     Regole:
     - dl_standard e dl_vip non sono gruppi Entra ID;
     - pillole è un canale e non viene inserito;
     - grp_salesforce_welfare viene inserito solo
       per gli utenti standard;
-    - tutte le altre righe PEL vengono riportate
-      una per riga;
-    - viene mantenuto l'ordine del file di configurazione.
+    - viene mantenuto l'ordine della configurazione.
     """
 
     entra_groups = []
 
     for key, value in pel_items:
+
         key = str(key).strip()
         value = str(value).strip()
 
@@ -438,29 +495,36 @@ def build_entraid_groups(
 
 
 # ------------------------------------------------------------
-# Costruzione CSV con logica precedente
+# Costruzione CSV
 # ------------------------------------------------------------
 def auto_quote(
     fields,
     quotechar='"',
     predicate=lambda value: " " in value
 ):
+
     """
-    Racchiude tra doppi apici ogni valore che contiene
-    almeno uno spazio.
+    Racchiude tra doppi apici ogni valore
+    che contiene almeno uno spazio.
     """
 
     output = []
 
     for field in fields:
+
         value = str(field)
 
         if predicate(value):
+
             output.append(
                 f'{quotechar}{value}{quotechar}'
             )
+
         else:
-            output.append(value)
+
+            output.append(
+                value
+            )
 
     return output
 
@@ -469,10 +533,11 @@ def prepara_csv_standard(
     row,
     header
 ):
+
     """
-    Mantiene la costruzione precedente dei CSV:
-    ogni campo contenente almeno uno spazio viene
-    racchiuso tra doppi apici.
+    Mantiene la costruzione precedente:
+    ogni campo contenente almeno uno spazio
+    viene racchiuso tra doppi apici.
     """
 
     buffer = io.StringIO()
@@ -490,8 +555,13 @@ def prepara_csv_standard(
         predicate=lambda value: " " in value
     )
 
-    writer.writerow(header)
-    writer.writerow(quoted_row)
+    writer.writerow(
+        header
+    )
+
+    writer.writerow(
+        quoted_row
+    )
 
     return buffer.getvalue()
 
@@ -547,48 +617,99 @@ st.subheader(
     "Modulo Inserimento Nuova Risorsa Interna"
 )
 
-employee_id = st.text_input(
-    "Matricola",
-    defaults.get(
-        "employee_id_default",
-        ""
+colonna_1, colonna_2 = st.columns(2)
+
+
+with colonna_1:
+
+    employee_id = st.text_input(
+        "Matricola",
+        defaults.get(
+            "employee_id_default",
+            ""
+        )
+    ).strip()
+
+    cognome = (
+        st.text_input(
+            "Cognome"
+        )
+        .strip()
+        .title()
     )
-).strip()
 
-cognome = (
-    st.text_input("Cognome")
-    .strip()
-    .capitalize()
-)
+    secondo_cognome = (
+        st.text_input(
+            "Secondo Cognome"
+        )
+        .strip()
+        .title()
+    )
 
-secondo_cognome = (
-    st.text_input("Secondo Cognome")
-    .strip()
-    .capitalize()
-)
+    nome = (
+        st.text_input(
+            "Nome"
+        )
+        .strip()
+        .title()
+    )
 
-nome = (
-    st.text_input("Nome")
-    .strip()
-    .capitalize()
-)
+    secondo_nome = (
+        st.text_input(
+            "Secondo Nome"
+        )
+        .strip()
+        .title()
+    )
 
-secondo_nome = (
-    st.text_input("Secondo Nome")
-    .strip()
-    .capitalize()
-)
+    codice_fiscale = st.text_input(
+        "Codice Fiscale",
+        ""
+    ).strip()
 
-codice_fiscale = st.text_input(
-    "Codice Fiscale",
-    ""
-).strip()
+
+with colonna_2:
+
+    numero_telefono = (
+        st.text_input(
+            "Mobile (+39 già inserito)",
+            ""
+        )
+        .replace(" ", "")
+        .strip()
+    )
+
+    description = st.text_input(
+        "PC (lascia vuoto per <PC>)",
+        "<PC>"
+    ).strip()
+
+    data_operativa = st.text_input(
+        "Data operatività (gg/mm/aaaa)",
+        ""
+    ).strip()
+
+    mouse_id = st.text_input(
+        "Mouse ID",
+        ""
+    ).strip()
+
+    mouse_sn = st.text_input(
+        "Mouse SN",
+        ""
+    ).strip()
+
+    hub_id = st.text_input(
+        "HUB Sandberg ID",
+        ""
+    ).strip()
 
 
 # ------------------------------------------------------------
 # Dropdown organigramma
 # ------------------------------------------------------------
 if organigramma:
+
     department_label = st.selectbox(
         "Sigla Divisione-Area",
         ["-- Seleziona --"]
@@ -598,16 +719,21 @@ if organigramma:
     )
 
     if department_label != "-- Seleziona --":
+
         department = organigramma.get(
             department_label,
             ""
         )
+
     else:
+
         department = defaults.get(
             "department_default",
             ""
         )
+
 else:
+
     department = st.text_input(
         "Sigla Divisione-Area",
         defaults.get(
@@ -617,36 +743,33 @@ else:
     ).strip()
 
 
-numero_telefono = (
-    st.text_input(
-        "Mobile (+39 già inserito)",
-        ""
-    )
-    .replace(" ", "")
-)
-
-description = st.text_input(
-    "PC (lascia vuoto per <PC>)",
-    "<PC>"
-).strip()
-
+# ------------------------------------------------------------
+# Resident e numero fisso
+# ------------------------------------------------------------
 resident_flag = st.checkbox(
     "È Resident?"
 )
 
 if resident_flag:
+
     numero_fisso = st.text_input(
         "Numero fisso Resident (+39 già inserito)",
         ""
     ).strip()
+
 else:
+
     numero_fisso = ""
 
+
 if resident_flag and numero_fisso:
+
     telephone_number = (
         f"+39 {numero_fisso}"
     )
+
 else:
+
     telephone_number = defaults.get(
         "telephone_interna",
         ""
@@ -657,7 +780,9 @@ else:
 # Tipologia utente e OU
 # ------------------------------------------------------------
 ou_values = (
-    list(ou_options.values())
+    list(
+        ou_options.values()
+    )
     if ou_options
     else []
 )
@@ -672,31 +797,44 @@ default_ou = defaults.get(
 index_default = 0
 
 if default_ou in ou_values:
+
     index_default = ou_values.index(
         default_ou
     )
 
+
 if ou_values:
+
     label_ou = st.selectbox(
         "Tipologia Utente",
         ou_values,
         index=index_default
     )
+
 else:
+
     label_ou = st.text_input(
         "Tipologia Utente",
         ""
     )
 
+
 if ou_values:
+
     selected_key = list(
         ou_options.keys()
-    )[ou_values.index(label_ou)]
+    )[
+        ou_values.index(
+            label_ou
+        )
+    ]
 
     ou_value = ou_options[
         selected_key
     ]
+
 else:
+
     selected_key = ""
     ou_value = ""
 
@@ -707,40 +845,23 @@ company = defaults.get(
 )
 
 
-data_operativa = st.text_input(
-    "Data operatività (gg/mm/aaaa)",
-    ""
-).strip()
-
-
 # ------------------------------------------------------------
-# Dati aggiuntivi per il flusso operativo
+# Firma digitale
 # ------------------------------------------------------------
-mouse_id = st.text_input(
-    "Mouse ID",
-    ""
-).strip()
-
-mouse_sn = st.text_input(
-    "Mouse SN",
-    ""
-).strip()
-
-hub_id = st.text_input(
-    "HUB Sandberg ID",
-    ""
-).strip()
-
 firma_digitale = st.checkbox(
     "Firma digitale?"
 )
 
 
+# ------------------------------------------------------------
+# Profilazione SM
+# ------------------------------------------------------------
 profilazione = st.checkbox(
     "Profilazione SM?"
 )
 
 if profilazione:
+
     sm_lines = [
         line.strip()
         for line in st.text_area(
@@ -749,35 +870,59 @@ if profilazione:
         ).splitlines()
         if line.strip()
     ]
+
 else:
+
     sm_lines = []
 
 
 # ------------------------------------------------------------
-# Liste di distribuzione in base alla tipologia utente
+# Liste di distribuzione per tipologia utente
 # ------------------------------------------------------------
 if selected_key == "utenti_standard":
+
     dl_list = dl_standard
 
 elif selected_key == "utenti_vip":
+
     dl_list = dl_vip
 
 else:
+
     dl_list = []
 
 
 # ------------------------------------------------------------
 # Generazione flusso completo
 # ------------------------------------------------------------
-if st.button("Genera CSV"):
+if st.button(
+    "Genera CSV",
+    type="primary"
+):
 
+    # --------------------------------------------------------
+    # Validazioni
+    # --------------------------------------------------------
     if not cognome or not nome:
+
         st.error(
             "Inserire almeno Cognome e Nome "
             "prima di generare i file."
         )
+
         st.stop()
 
+    if not data_operativa:
+
+        st.error(
+            "Inserire la Data operatività."
+        )
+
+        st.stop()
+
+    # --------------------------------------------------------
+    # Dati principali
+    # --------------------------------------------------------
     sam = genera_samaccountname(
         nome,
         cognome,
@@ -805,10 +950,13 @@ if st.button("Genera CSV"):
     )
 
     if numero_telefono:
+
         mobile = (
             f"+39 {numero_telefono}"
         )
+
     else:
+
         mobile = ""
 
     persona_nome_file = " ".join(
@@ -833,13 +981,34 @@ if st.button("Genera CSV"):
         if part
     )
 
-    # ========================================================
-    # FILE DEL PUNTO 02
-    # ========================================================
+    pc_asset = (
+        description
+        or "<PC>"
+    )
 
-    # --------------------------------------------------------
-    # 1 - File utenza
-    # --------------------------------------------------------
+    data_operativa_output = (
+        data_operativa
+        or "<data inizio>"
+    )
+
+    mouse_id_output = (
+        mouse_id
+        or "#id"
+    )
+
+    mouse_sn_output = (
+        mouse_sn
+        or "#sn"
+    )
+
+    hub_id_output = (
+        hub_id
+        or "#id"
+    )
+
+    # ========================================================
+    # FILE 1 - UTENZA
+    # ========================================================
     row_utente = [
         sam,
         "SI",
@@ -852,7 +1021,7 @@ if st.button("Genera CSV"):
         codice_fiscale,
         employee_id,
         department,
-        description or "<PC>",
+        pc_asset,
         "No",
         "",
         f"{sam}@consip.it",
@@ -871,9 +1040,9 @@ if st.button("Genera CSV"):
         HEADER_UTENTE
     )
 
-    # --------------------------------------------------------
-    # 2 - File casella
-    # --------------------------------------------------------
+    # ========================================================
+    # FILE 2 - CASELLA
+    # ========================================================
     casella_lines = [
         "Tipo Utenza --- Remota",
         f"Utenza --- {sam}",
@@ -887,14 +1056,30 @@ if st.button("Genera CSV"):
         )
     ]
 
+    # Eventuale profilazione SM
+    if profilazione and sm_lines:
+
+        casella_lines.append("")
+        casella_lines.append(
+            "Profilare su SM:"
+        )
+
+        for sm in sm_lines:
+
+            casella_lines.append(
+                f"- {sm}"
+            )
+
     csv_casella = (
-        "\n".join(casella_lines)
+        "\n".join(
+            casella_lines
+        )
         + "\n"
     )
 
-    # --------------------------------------------------------
-    # 3 - Profilazione gruppi AD
-    # --------------------------------------------------------
+    # ========================================================
+    # FILE 3 - PROFILAZIONE GRUPPI AD
+    # ========================================================
     inserimento_gruppo_value = (
         gruppi.get(
             "interna",
@@ -908,6 +1093,7 @@ if st.button("Genera CSV"):
     for group in split_values(
         inserimento_gruppo_value
     ):
+
         if group.startswith("365 "):
             group = "O" + group
 
@@ -922,7 +1108,9 @@ if st.button("Genera CSV"):
 
     row_gruppi_ad = [
         ""
-    ] * len(HEADER_UTENTE)
+    ] * len(
+        HEADER_UTENTE
+    )
 
     row_gruppi_ad[0] = sam
 
@@ -934,16 +1122,18 @@ if st.button("Genera CSV"):
 
     row_gruppi_ad[
         inserimento_gruppo_index
-    ] = ";".join(gruppi_ad)
+    ] = ";".join(
+        gruppi_ad
+    )
 
     csv_gruppi_ad = prepara_csv_standard(
         row_gruppi_ad,
         HEADER_UTENTE
     )
 
-    # --------------------------------------------------------
-    # 4 - Profilazione gruppi Entra ID
-    # --------------------------------------------------------
+    # ========================================================
+    # FILE 4 - PROFILAZIONE GRUPPI ENTRA ID
+    # ========================================================
     gruppi_entraid = build_entraid_groups(
         pel_items,
         selected_key
@@ -956,20 +1146,31 @@ if st.button("Genera CSV"):
         )
     ]
 
-    entra_lines.extend(
-        gruppi_entraid
-    )
+    if gruppi_entraid:
+
+        entra_lines.extend(
+            gruppi_entraid
+        )
+
+    else:
+
+        entra_lines.append(
+            "Nessun gruppo EntraID previsto."
+        )
 
     csv_entraid = (
-        "\n".join(entra_lines)
+        "\n".join(
+            entra_lines
+        )
         + "\n"
     )
 
-    # --------------------------------------------------------
-    # 5 - File computer
-    # --------------------------------------------------------
+    # ========================================================
+    # FILE 5 - COMPUTER
+    # Da elaborare alla data operatività
+    # ========================================================
     row_computer = [
-        description or "",
+        pc_asset,
         "",
         f"{sam}@consip.it",
         "",
@@ -986,9 +1187,40 @@ if st.button("Genera CSV"):
         HEADER_COMPUTER
     )
 
-    # --------------------------------------------------------
-    # Nomi file
-    # --------------------------------------------------------
+    # ========================================================
+    # FILE 6 - LISTE DI DISTRIBUZIONE
+    # Da elaborare alla data operatività
+    # ========================================================
+    dl_lines = [
+        (
+            f"{sam}@consip.it "
+            f"in data {data_operativa_output} "
+            "inserire nelle DL:"
+        )
+    ]
+
+    if dl_list:
+
+        dl_lines.extend(
+            dl_list
+        )
+
+    else:
+
+        dl_lines.append(
+            "Nessuna lista di distribuzione prevista."
+        )
+
+    csv_dl = (
+        "\n".join(
+            dl_lines
+        )
+        + "\n"
+    )
+
+    # ========================================================
+    # NOMI FILE
+    # ========================================================
     filename_utente = (
         f"1_{persona_nome_file}_utenza.csv"
     )
@@ -1012,51 +1244,40 @@ if st.button("Genera CSV"):
         "_computer.csv"
     )
 
-    # --------------------------------------------------------
-    # 01 - Assegnazione Asset
-    # --------------------------------------------------------
-    pc_asset = (
-        description
-        or "<PC>"
+    filename_dl = (
+        f"6_{persona_nome_file}_DL.csv"
     )
 
-    mouse_id_output = (
-        mouse_id
-        or "#id"
+    # ========================================================
+    # 01 - GSI
+    # ASSEGNAZIONE ASSET
+    # ========================================================
+    subject_gsi = (
+        "01 - Assegnazione Asset - "
+        f"{cn} → GSI"
     )
 
-    mouse_sn_output = (
-        mouse_sn
-        or "#sn"
-    )
-
-    hub_id_output = (
-        hub_id
-        or "#id"
-    )
-
-    subject_assegnazione_asset = (
-        f"01 - Assegnazione Asset - {cn} -> GSI"
-    )
-
-    message_assegnazione_asset = (
+    message_gsi = (
         f"Per la nuova risorsa {cn} assegnare asset:\n"
         f"- PC Nome asset {pc_asset}\n"
         f"- mouse ID {mouse_id_output} "
         f"e SN {mouse_sn_output}\n"
-        f"- HUB Sandberg ID {hub_id_output}\n"
+        f"- HUB Sandberg ID {hub_id_output}"
     )
 
-    # --------------------------------------------------------
-    # 02 - Provisioning utente
-    # --------------------------------------------------------
-    subject_provisioning = (
+    # ========================================================
+    # 02 - GIIT
+    # Provisioning Utente + Computer + DL
+    # ========================================================
+    subject_giit = (
         "02 - Provisioning Utente "
-        "(utenza/Casella/Profilazione) - "
-        f"{cn} -> GIIT"
+        "(utenza/Casella/Profilazione) + "
+        "Profilazione Computer + "
+        "Liste di Distribuzione - "
+        f"{cn} → GIIT"
     )
 
-    message_provisioning = (
+    message_giit = (
         "Ciao,\n"
         "si richiede di elaborare i file contenuti "
         "nella cartella compressa .zip "
@@ -1069,16 +1290,26 @@ if st.button("Genera CSV"):
         "dei gruppi AD\n"
         f"4. {filename_entraid} per inserimento "
         "dei gruppi EntraID\n"
+        f"5. {filename_computer} per la profilazione "
+        "del Computer\n"
+        f"6. {filename_dl} per l'inserimento "
+        "nelle Liste di Distribuzione\n"
+        "\n"
+        f"Le attività relative ai file 5 e 6 devono "
+        f"essere effettuate il giorno "
+        f"{data_operativa_output}."
     )
 
-    # --------------------------------------------------------
-    # 03 - Provisioning PC
-    # --------------------------------------------------------
-    subject_provisioning_pc = (
-        f"03 - Provisioning PC - {cn} -> GHDW"
+    # ========================================================
+    # 03 - GHDW
+    # Provisioning PC + Firma Asset
+    # ========================================================
+    subject_ghdw = (
+        "03 - Provisioning PC e Firma Asset - "
+        f"{cn} → GHDW"
     )
 
-    message_provisioning_pc = (
+    message_ghdw = (
         "Ciao,\n"
         f"per {cn} ritirare dal 599 "
         "per CONFIGURAZIONE i seguenti asset:\n"
@@ -1087,148 +1318,97 @@ if st.button("Genera CSV"):
         f"e SN {mouse_sn_output}\n"
         f"- HUB Sandberg ID {hub_id_output}\n"
         "\n"
-        f"la risorsa prende servizio {data_operativa}\n"
+        f"La risorsa prende servizio "
+        f"{data_operativa_output}.\n"
+        "\n"
+        "Attività da effettuare:\n"
+        f"1. Configurare gli asset indicati.\n"
+        f"2. Il giorno {data_operativa_output} "
+        "far firmare gli asset ritirati dal 599 "
+        f"per la consegna a {cn}."
     )
 
-    # --------------------------------------------------------
-    # 04 - Caricamento foto
-    # --------------------------------------------------------
-    subject_caricamento_foto = (
-        f"04 - Caricamento Foto - {cn} -> GA"
+    # ========================================================
+    # 04 - GA
+    # Foto + SIC + Accesso intranet PSN
+    # ========================================================
+    subject_ga = (
+        "04 - Caricamento Foto, Verifica SIC e "
+        "Accesso intranet PSN - "
+        f"{cn} → GA"
     )
 
-    message_caricamento_foto = (
-        "Ciao,\n"
-        "si richiede il caricamento della foto "
-        f"in allegato per {cn}.\n"
-    )
-
-    # --------------------------------------------------------
-    # 05 - Firma digitale
-    # --------------------------------------------------------
-    subject_firma_digitale = (
-        f"05 - Firma digitale - {cn} -> MM"
-    )
-
-    if firma_digitale:
-        message_firma_digitale = (
-            f"Assegnare Firma Digitale a {cn}.\n"
-        )
-    else:
-        message_firma_digitale = (
-            "Firma digitale non prevista "
-            "per questa risorsa.\n"
-        )
-
-    # --------------------------------------------------------
-    # 06 - Verifica ed Eventuale Modifica SIC
-    # Sempre visualizzato con il testo richiesto
-    # --------------------------------------------------------
     mail_utente = (
         f"{sam}@consip.it"
     )
 
-    subject_verifica_sic = (
-        "06 - Verifica ed Eventuale Modifica SIC - "
-        f"{cn} -> GA"
-    )
-
-    message_verifica_sic = (
-        "Ciao, si richiede verifica che per utente "
-        f"{cn} sia indicato sul SIC con la seguente "
-        f'email "{mail_utente}"'
-    )
-
-    # --------------------------------------------------------
-    # 07 - Accesso intranet PSN
-    # --------------------------------------------------------
-    subject_accesso_psn = (
-        "07 - Accesso intranet PSN per dipendente "
-        "-> GITT -> GA"
-    )
-
-    message_accesso_psn = (
-        "Attività momentaneamente esclusa dal flusso "
-        "perché attualmente gestita via email.\n"
-    )
-
-    # --------------------------------------------------------
-    # 08 - Lista di distribuzione
-    # --------------------------------------------------------
-    subject_dl = (
-        "08 - Lista di distribuzione standard -> GIIT"
-    )
-
-    dl_lines = [
-        (
-            f"{sam}@consip.it "
-            f"in data {data_operativa} "
-            "inserire nelle DL:"
-        )
-    ]
-
-    dl_lines.extend(
-        dl_list
-    )
-
-    message_dl = (
-        "\n".join(dl_lines)
-        + "\n"
-    )
-
-    # --------------------------------------------------------
-    # 09 - Firma Asset
-    # --------------------------------------------------------
-    subject_firma_asset = (
-        f"09 - Firma Asset - {cn} -> GHDW"
-    )
-
-    message_firma_asset = (
+    message_ga = (
         "Ciao,\n"
-        f"si richiede il giorno {data_operativa} "
-        "di far firmare gli asset ritirati dal 599 "
-        f"per la consegna a {cn}.\n"
+        "si richiedono le seguenti attività:\n"
+        f"1. Caricare la foto in allegato per {cn}.\n"
+        f"2. Verificare che per l'utente {cn} "
+        "sia indicata sul SIC la seguente email: "
+        f'"{mail_utente}".\n'
+        "3. Accesso intranet PSN: attività "
+        "momentaneamente esclusa dal flusso, "
+        "perché attualmente gestita via email."
     )
 
-    # --------------------------------------------------------
-    # Guida completa in ordine da 01 a 09
-    # --------------------------------------------------------
+    # ========================================================
+    # 05 - MM
+    # Firma digitale
+    # ========================================================
+    subject_mm = (
+        "05 - Firma digitale - "
+        f"{cn} → MM"
+    )
+
+    if firma_digitale:
+
+        message_mm = (
+            f"Assegnare Firma Digitale a {cn}."
+        )
+
+    else:
+
+        message_mm = (
+            "Firma digitale non prevista "
+            "per questa risorsa."
+        )
+
+    # ========================================================
+    # GUIDA COMPLETA
+    # Raggruppata per area di competenza
+    # ========================================================
     guida_flusso_lines = [
-        subject_assegnazione_asset,
-        message_assegnazione_asset,
+        subject_gsi,
+        message_gsi,
 
-        subject_provisioning,
-        message_provisioning,
+        subject_giit,
+        message_giit,
 
-        subject_provisioning_pc,
-        message_provisioning_pc,
+        subject_ghdw,
+        message_ghdw,
 
-        subject_caricamento_foto,
-        message_caricamento_foto,
+        subject_ga,
+        message_ga,
 
-        subject_firma_digitale,
-        message_firma_digitale,
-
-        subject_verifica_sic,
-        message_verifica_sic,
-
-        subject_accesso_psn,
-        message_accesso_psn,
-
-        subject_dl,
-        message_dl,
-
-        subject_firma_asset,
-        message_firma_asset
+        subject_mm,
+        message_mm
     ]
 
     guida_flusso = "\n\n".join(
         guida_flusso_lines
     )
 
-    # --------------------------------------------------------
-    # Creazione bundle ZIP
-    # --------------------------------------------------------
+    filename_guida = (
+        f"Guida_Flusso_"
+        f"{persona_nome_underscore}.txt"
+    )
+
+    # ========================================================
+    # CREAZIONE BUNDLE ZIP
+    # ========================================================
     zip_buffer = io.BytesIO()
 
     with zipfile.ZipFile(
@@ -1263,10 +1443,12 @@ if st.button("Genera CSV"):
         )
 
         zip_file.writestr(
-            (
-                f"Guida_Flusso_"
-                f"{persona_nome_underscore}.txt"
-            ),
+            filename_dl,
+            csv_dl
+        )
+
+        zip_file.writestr(
+            filename_guida,
             guida_flusso
         )
 
@@ -1278,35 +1460,35 @@ if st.button("Genera CSV"):
     )
 
     # ========================================================
-    # VISUALIZZAZIONE ORDINATA DEL FLUSSO
+    # VISUALIZZAZIONE DEL FLUSSO
     # ========================================================
 
     # ========================================================
-    # 01 - ASSEGNAZIONE ASSET
+    # 01 - GSI
     # ========================================================
     st.subheader(
-        subject_assegnazione_asset
+        subject_gsi
     )
 
     st.text(
-        message_assegnazione_asset
+        message_gsi
     )
 
     st.divider()
 
     # ========================================================
-    # 02 - PROVISIONING UTENTE
+    # 02 - GIIT
     # ========================================================
     st.subheader(
-        subject_provisioning
+        subject_giit
     )
 
     st.text(
-        message_provisioning
+        message_giit
     )
 
     st.markdown(
-        "**File collegati al punto 02:**"
+        "**File di competenza GIIT:**"
     )
 
     # --------------------------------------------------------
@@ -1328,7 +1510,8 @@ if st.button("Genera CSV"):
         "Scarica 1 - Utenza",
         data=csv_utente,
         file_name=filename_utente,
-        mime="text/csv"
+        mime="text/csv",
+        key="download_utente"
     )
 
     # --------------------------------------------------------
@@ -1346,7 +1529,8 @@ if st.button("Genera CSV"):
         "Scarica 2 - Casella",
         data=csv_casella,
         file_name=filename_casella,
-        mime="text/csv"
+        mime="text/csv",
+        key="download_casella"
     )
 
     # --------------------------------------------------------
@@ -1368,7 +1552,8 @@ if st.button("Genera CSV"):
         "Scarica 3 - Gruppi AD",
         data=csv_gruppi_ad,
         file_name=filename_gruppi_ad,
-        mime="text/csv"
+        mime="text/csv",
+        key="download_gruppi_ad"
     )
 
     # --------------------------------------------------------
@@ -1386,7 +1571,8 @@ if st.button("Genera CSV"):
         "Scarica 4 - Gruppi Entra ID",
         data=csv_entraid,
         file_name=filename_entraid,
-        mime="text/csv"
+        mime="text/csv",
+        key="download_entraid"
     )
 
     # --------------------------------------------------------
@@ -1394,6 +1580,11 @@ if st.button("Genera CSV"):
     # --------------------------------------------------------
     st.markdown(
         f"**5. {filename_computer}**"
+    )
+
+    st.info(
+        f"Il file deve essere elaborato il giorno "
+        f"{data_operativa_output}."
     )
 
     st.dataframe(
@@ -1408,11 +1599,36 @@ if st.button("Genera CSV"):
         "Scarica 5 - Computer",
         data=csv_computer,
         file_name=filename_computer,
-        mime="text/csv"
+        mime="text/csv",
+        key="download_computer"
     )
 
     # --------------------------------------------------------
-    # Download bundle completo in corrispondenza del punto 02
+    # File 6 - Liste di distribuzione
+    # --------------------------------------------------------
+    st.markdown(
+        f"**6. {filename_dl}**"
+    )
+
+    st.info(
+        f"Il file deve essere elaborato il giorno "
+        f"{data_operativa_output}."
+    )
+
+    st.text(
+        csv_dl
+    )
+
+    st.download_button(
+        "Scarica 6 - Liste di Distribuzione",
+        data=csv_dl,
+        file_name=filename_dl,
+        mime="text/csv",
+        key="download_dl"
+    )
+
+    # --------------------------------------------------------
+    # Bundle completo
     # --------------------------------------------------------
     st.markdown(
         "**Bundle completo del provisioning:**"
@@ -1422,104 +1638,56 @@ if st.button("Genera CSV"):
         "📦 Scarica bundle completo ZIP",
         data=zip_buffer.getvalue(),
         file_name=bundle_name,
-        mime="application/zip"
+        mime="application/zip",
+        key="download_bundle"
     )
 
     st.divider()
 
     # ========================================================
-    # 03 - PROVISIONING PC
+    # 03 - GHDW
     # ========================================================
     st.subheader(
-        subject_provisioning_pc
+        subject_ghdw
     )
 
     st.text(
-        message_provisioning_pc
+        message_ghdw
     )
 
     st.divider()
 
     # ========================================================
-    # 04 - CARICAMENTO FOTO
+    # 04 - GA
     # ========================================================
     st.subheader(
-        subject_caricamento_foto
+        subject_ga
     )
 
     st.text(
-        message_caricamento_foto
+        message_ga
     )
 
     st.divider()
 
     # ========================================================
-    # 05 - FIRMA DIGITALE
+    # 05 - MM
     # ========================================================
     st.subheader(
-        subject_firma_digitale
+        subject_mm
     )
 
     if firma_digitale:
+
         st.text(
-            message_firma_digitale
+            message_mm
         )
+
     else:
+
         st.info(
-            message_firma_digitale
+            message_mm
         )
-
-    st.divider()
-
-    # ========================================================
-    # 06 - VERIFICA ED EVENTUALE MODIFICA SIC
-    # ========================================================
-    st.subheader(
-        subject_verifica_sic
-    )
-
-    st.text(
-        message_verifica_sic
-    )
-
-    st.divider()
-
-    # ========================================================
-    # 07 - ACCESSO INTRANET PSN
-    # ========================================================
-    st.subheader(
-        subject_accesso_psn
-    )
-
-    st.info(
-        message_accesso_psn
-    )
-
-    st.divider()
-
-    # ========================================================
-    # 08 - LISTA DI DISTRIBUZIONE
-    # ========================================================
-    st.subheader(
-        subject_dl
-    )
-
-    st.text(
-        message_dl
-    )
-
-    st.divider()
-
-    # ========================================================
-    # 09 - FIRMA ASSET
-    # ========================================================
-    st.subheader(
-        subject_firma_asset
-    )
-
-    st.text(
-        message_firma_asset
-    )
 
     st.success(
         f"Flusso completo generato correttamente per '{sam}'."
